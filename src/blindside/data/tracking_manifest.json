@@ -1,0 +1,108 @@
+{
+  "description": "Location, size and sha256 of the SkillCorner 10 fps tracking files. Values copied from the Git LFS pointer files in github.com/SkillCorner/opendata (MIT) at the pinned commit. The files are fetched from the GitHub LFS media endpoint, so git-lfs is not needed.",
+  "repository": "SkillCorner/opendata",
+  "commit": "4340d274572876239c154c90bc507a9b3250a656",
+  "base_url": "https://media.githubusercontent.com/media/SkillCorner/opendata/4340d274572876239c154c90bc507a9b3250a656",
+  "matches": {
+    "1874553": {
+      "file": "data/matches/1874553/1874553_tracking_extrapolated.jsonl",
+      "size_bytes": 90729279,
+      "sha256": "ea97f58f8eaad925feaeacc6395ec24860dd80027af8a89450276adebd29d265"
+    },
+    "1886347": {
+      "file": "data/matches/1886347/1886347_tracking_extrapolated.jsonl",
+      "size_bytes": 89280839,
+      "sha256": "3577e2803da95390f8b2f85d47829eb55fbbfee6211c94adc65db0dc78e46b41"
+    },
+    "1899585": {
+      "file": "data/matches/1899585/1899585_tracking_extrapolated.jsonl",
+      "size_bytes": 85550410,
+      "sha256": "90b6289ec2181192d1793ec6240fbbe8225ff0219c7956710c6278c31a661100"
+    },
+    "1925299": {
+      "file": "data/matches/1925299/1925299_tracking_extrapolated.jsonl",
+      "size_bytes": 97091519,
+      "sha256": "48528be40ad82fa3e2b232e1af8d311705f7d6d119925ef199d2b59ea36fd3c9"
+    },
+    "1927964": {
+      "file": "data/matches/1927964/1927964_tracking_extrapolated.jsonl",
+      "size_bytes": 91049828,
+      "sha256": "858c7a756ca3d33017f864775af5999d2c0f364e58ab60ae040c8b9ebab17827"
+    },
+    "1953632": {
+      "file": "data/matches/1953632/1953632_tracking_extrapolated.jsonl",
+      "size_bytes": 90027965,
+      "sha256": "1c2014f97c3eff1ce2475203512c9d126930d7599c036105c9ac442d1de1667e"
+    },
+    "1959846": {
+      "file": "data/matches/1959846/1959846_tracking_extrapolated.jsonl",
+      "size_bytes": 87710167,
+      "sha256": "5ba2d87f6fd1ba3138301b369bd9266be69416a2d799a3fba5b5ec8a52e1284b"
+    },
+    "1986691": {
+      "file": "data/matches/1986691/1986691_tracking_extrapolated.jsonl",
+      "size_bytes": 88531597,
+      "sha256": "630e946950fe459f5e48872b01a36e6dfc319cf9027e7b98156150bb6e2c30f6"
+    },
+    "1996435": {
+      "file": "data/matches/1996435/1996435_tracking_extrapolated.jsonl",
+      "size_bytes": 88634016,
+      "sha256": "f42764d8bde290e8f738fa21141cadbed75408314b0b337bbf1d5a3444540a02"
+    },
+    "1996436": {
+      "file": "data/matches/1996436/1996436_tracking_extrapolated.jsonl",
+      "size_bytes": 88945845,
+      "sha256": "fab9d331e06f3042c83ac17798901b49bb259c99a8f3b319cd0146263cde65e7"
+    },
+    "2006229": {
+      "file": "data/matches/2006229/2006229_tracking_extrapolated.jsonl",
+      "size_bytes": 90078007,
+      "sha256": "3ee193ba01f1fe2cbce087eca8a881c21b8b0ea3485ae6c3d7e32e8b2f51e738"
+    },
+    "2006363": {
+      "file": "data/matches/2006363/2006363_tracking_extrapolated.jsonl",
+      "size_bytes": 90591887,
+      "sha256": "61dfdbd83f8e654127b249b8503f062338c14ec0c9e65404bcf70fb7c1346bd4"
+    },
+    "2007448": {
+      "file": "data/matches/2007448/2007448_tracking_extrapolated.jsonl",
+      "size_bytes": 90025383,
+      "sha256": "12d00d6e4257218812df6e4c4263c49387ba0313a83ff8d826c4416828f9c798"
+    },
+    "2007721": {
+      "file": "data/matches/2007721/2007721_tracking_extrapolated.jsonl",
+      "size_bytes": 92872706,
+      "sha256": "fea913b8d4cbde8d85c6bdf5f1a4b3fd203b78227e976a171c8ab0946705d378"
+    },
+    "2010085": {
+      "file": "data/matches/2010085/2010085_tracking_extrapolated.jsonl",
+      "size_bytes": 92516156,
+      "sha256": "04562d9754b2977c80430535e9b5733426bc4ce910db56fe7a3760876211ac5a"
+    },
+    "2011166": {
+      "file": "data/matches/2011166/2011166_tracking_extrapolated.jsonl",
+      "size_bytes": 87441570,
+      "sha256": "8ec2937050930d87e4f52b2d65515f70ef8edd0ae2814bf40155c4448133390e"
+    },
+    "2013725": {
+      "file": "data/matches/2013725/2013725_tracking_extrapolated.jsonl",
+      "size_bytes": 96059074,
+      "sha256": "13eb83329814ed5f5d73da8f8ab5c5979d6c8a7858e89e28a7fa8072f91fb250"
+    },
+    "2015213": {
+      "file": "data/matches/2015213/2015213_tracking_extrapolated.jsonl",
+      "size_bytes": 102030769,
+      "sha256": "413990d0024d84856ce1f2a16866b8887472c0cea22c61caef0d1f46505a609e"
+    },
+    "2016236": {
+      "file": "data/matches/2016236/2016236_tracking_extrapolated.jsonl",
+      "size_bytes": 94737872,
+      "sha256": "d78555f9dfd7d1ce9de38066d3c98e6d54417c6d45d73b1f1ce7e26f07263d8f"
+    },
+    "2017461": {
+      "file": "data/matches/2017461/2017461_tracking_extrapolated.jsonl",
+      "size_bytes": 89543442,
+      "sha256": "59cfa5588efee041da439f44df5b5b92f2b7305571dc831164e3d05f7415787a"
+    }
+  }
+}

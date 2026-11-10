@@ -23,6 +23,11 @@ def pose_raw_dir() -> Path:
     return data_dir() / "raw" / "bodypose"
 
 
+def tracking_raw_dir() -> Path:
+    """Directory holding the downloaded tracking files."""
+    return data_dir() / "raw" / "tracking"
+
+
 def cache_dir() -> Path:
     """Directory for derived intermediate tables."""
     return data_dir() / "cache"
