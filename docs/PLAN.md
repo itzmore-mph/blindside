@@ -1,0 +1,144 @@
+# PLAN.md
+
+Phase plan with gates and ready-to-paste Claude Code prompts.
+Budget assumption: 8 to 10 hours per week, about 45 to 50 hours in total.
+
+| Phase | Dates | Hours | Gate |
+|---|---|---|---|
+| 0 Feasibility | 10 to 15 Nov | 6 | Go / no-go on sample size and schema |
+| 1 Orientation and uncertainty | 16 to 22 Nov | 10 | Unit tests green, velocity consistency check plotted |
+| 2 Reliability map | 23 to 29 Nov | 8 | Three final figures for deliverable 2 |
+| 3 Engagements and baseline | 30 Nov to 6 Dec | 10 | Pre-registration committed, XY baseline scored |
+| 4 Incremental value | 7 to 11 Dec | 6 | Result with confidence intervals, whatever it shows |
+| 5 Packaging | 12 to 16 Dec | 8 | Clean-clone run passes, abstract and video done |
+| Buffer | 17 to 18 Dec | 0 | Submit on 17 Dec |
+
+Cut rule: if phase 0 or phase 3 shows too few usable engagements, drop phase 4 and submit deliverables 1 and 2
+with the blind-side metric shown descriptively on case examples.
+
+---
+
+## Phase 0: Feasibility (gate: go / no-go)
+
+Manual tasks for Moritz:
+- Join the Discord. Ask: (1) Do the 10 new tracking matches also have dynamic events, and where are they hosted?
+  (2) Does "work out of the box" tolerate a multi-GB download from Hugging Face in the full path if a fast path on the sample exists?
+  (3) Do figures inside the one-minute video count toward the two-figure limit? (Presumably not, confirm.)
+- Check the Publicis employment contract for side-activity and IP clauses before publishing the repo.
+- Confirm in-person availability for Paris on 17 February 2027. Remote talks are not accepted.
+- Decide solo or pair before phase 1.
+
+Prompt:
+
+```
+Read CLAUDE.md. Then clone github.com/SkillCorner/opendata into ../opendata (read only reference).
+Read data/bodypose/README.md, the top-level README, src/ loaders and the tutorial in notebooks/tutorials/05_Body_Pose.
+
+Do not write analysis code yet. Produce docs/FEASIBILITY.md answering, with evidence from the data:
+1. Exact body pose schema: joint names and indices, units, axis conventions, how the predicted error is stored.
+2. Which joints can define shoulder line, hip line and head direction.
+3. In the dynamic events of matches 1925299 and 1996435: all event types and subtypes, the row count of
+   on-ball engagements per subtype, and which columns link an engagement to the pressed player possession.
+4. Using only the committed sample phase: share of frames where both the presser and the ball carrier are detected
+   and have pose. Extrapolate cautiously to a full match and state the uncertainty.
+5. Distribution of the per-joint predicted error for shoulders, hips and head joints.
+6. Size and structure of the Hugging Face files and a streaming strategy that keeps memory under 4 GB.
+
+End with a go / no-go recommendation for deliverable 3 based on the expected number of usable engagements.
+State every number's source. If something cannot be determined from the sample, say so.
+```
+
+Gate: at least roughly 300 usable engagements across both matches for deliverable 3. Below that, apply the cut rule.
+
+## Phase 1: Orientation and uncertainty
+
+```
+Read CLAUDE.md and docs/FEASIBILITY.md. Scaffold the repo (uv, pyproject, ruff, pytest, src layout).
+
+Implement src/blindside/geometry:
+- circular.py: circular mean, circular std, angular difference, with tests.
+- orientation.py: torso, hip and head facing angle in the pitch plane from joint arrays, vectorised over frames and players.
+  Resolve front/back ambiguity explicitly.
+- uncertainty.py: Monte Carlo propagation of the per-joint error into angular uncertainty using the error model in CLAUDE.md,
+  with the sigma conversion factor as a parameter.
+
+Tests: synthetic skeletons with known facing angles, including rotated, mirrored and noisy cases.
+Verify that the Monte Carlo output matches an analytic small-angle approximation for a simple two-joint case.
+
+Then implement the streaming pose loader and a cached per-frame orientation table (parquet) for the sample phase first,
+full matches second. Report runtime and memory for one full match.
+```
+
+Gate: tests green. Plot of hip orientation minus velocity heading as a function of speed looks sensible
+(tight around zero at sprint speed). If not, debug the axis conventions before moving on.
+
+## Phase 2: Reliability map
+
+```
+Read CLAUDE.md. Using the cached orientation tables for both pose matches, build src/blindside/analysis/reliability.py and produce:
+1. Angular uncertainty by pitch zone (mplsoccer heatmap), separately for torso, hips and head.
+2. Angular uncertainty versus player speed and versus distance from the main camera touchline.
+3. Hip orientation versus velocity heading agreement by speed band, as the no-ground-truth consistency check.
+4. Share of player-frames passing a usability threshold (for example circular std below 20 degrees), per joint group,
+   plus the sensitivity of that share to the sigma conversion factor (2.0, 2.5, 3.0).
+5. Misalignment between XY position and pose centroid, as a distribution.
+
+Write a short findings section in docs/RELIABILITY.md: what is reliable, what is not, and what an analyst should
+therefore not build on this data. Label assumptions.
+```
+
+Gate: one composite reliability figure that is a candidate for README figure 1. All other plots go to docs/RELIABILITY.md.
+
+## Phase 3: Engagements and XY baseline
+
+```
+Read CLAUDE.md and docs/FEASIBILITY.md.
+First, draft docs/PREREGISTRATION.md and stop for my review. It must fix: unit of analysis (one on-ball engagement),
+inclusion criteria, the primary outcome, the XY-only baseline feature set, the pose feature set, the model class,
+the evaluation metric and the resampling scheme. Propose two candidate primary outcomes with pros and cons
+(for example possession_epv_total of the pressed possession, or a binary ball-loss or forced-backward outcome)
+and recommend one. Do not look at outcome distributions conditional on pose features while drafting.
+
+After I approve: implement src/blindside/features (engagement extraction, XY baseline features: distance, closing speed,
+approach angle, defenders within 5 and 10 meters, pitch zone, SkillCorner pressure and difficulty labels at start).
+Fit the XY baseline on all matches that have dynamic events but no body pose, and evaluate it on the two pose matches,
+so the baseline is as strong as the data allows and the pose matches stay untouched for the incremental test.
+Report out-of-sample performance with cluster bootstrap confidence intervals and leave-one-match-out.
+```
+
+Gate: pre-registration committed before any outcome modelling with pose features.
+
+## Phase 4: Incremental value of pose
+
+```
+Read CLAUDE.md and docs/PREREGISTRATION.md. Implement the pose features:
+- p_blind_side: probability that the presser lies outside the carrier's visual field at engagement start,
+  computed from the Monte Carlo head and torso orientation samples (field of view half-angle as a parameter, default 100 degrees).
+- presser body alignment: angle between presser hip orientation and the direction to the carrier, with uncertainty.
+- carrier openness: carrier torso orientation relative to the attacking direction.
+
+Run exactly the pre-registered comparison: baseline versus baseline plus pose features. Report the performance difference
+with a paired cluster bootstrap confidence interval, and the descriptive effect of p_blind_side on the primary outcome in bins.
+Repeat using only engagements that pass the usability threshold. Report all results including a null result.
+Anything beyond the pre-registration goes into a clearly labelled exploratory section.
+```
+
+Gate: one honest headline sentence, supported by the interval. A null result is acceptable and is reported as such.
+
+## Phase 5: Packaging
+
+```
+Read CLAUDE.md. Implement the CLI: `blindside reproduce --fast` (sample phase, under five minutes) and `blindside reproduce`
+(full download with cache and progress, checksum verification, clear error messages on network failure). Both regenerate the two README figures.
+
+Draft README.md: at most 1000 words, exactly two figures. Structure mapped to the judging criteria:
+the defensive question and who it helps, method in plain language, the headline result with its confidence interval,
+limitations, how to reproduce, how to reuse the package (10-line example), third-party libraries and licences.
+Add a word-count check to CI that fails above 1000 words or more than two figures or tables.
+Add LICENSE.md (MIT). Add a GitHub Actions workflow that runs tests and the fast path on a clean runner.
+
+Then run a clean-clone test in a fresh directory on a machine state without caches and fix everything that breaks.
+```
+
+Manual tasks for Moritz: record the one-minute video (script: problem 10 s, idea 15 s, result 20 s, reuse 15 s), upload to YouTube,
+make the repo public, submit on Pretalx on 17 Dec.
