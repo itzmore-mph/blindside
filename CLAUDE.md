@@ -131,7 +131,8 @@ Consequences for how we build:
 - Plots with matplotlib and mplsoccer. One consistent style module in `src/blindside/viz/style.py`.
 - Small, reviewable commits. Never commit data files or credentials.
 - Every commit message ends with the trailer `Co-Authored-By: Claude <noreply@anthropic.com>`.
-  Required by the submission rules (stated by Moritz on 10 November 2026). This overrides the global no-trailer preference for this repository only.
+  Project decision by Moritz (10 November 2026) to disclose AI assistance. The published rules neither require nor forbid it.
+  This overrides the global no-trailer preference for this repository only.
 
 ## Repository layout
 
