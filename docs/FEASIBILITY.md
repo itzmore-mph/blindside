@@ -278,8 +278,8 @@ Reproduce with `uv run python scripts/orientation_tables.py --write-docs`. The b
 
 | Match | Rows | Archive, MB | Runtime, s | Peak RSS, MB | Parquet, MB |
 |---|---|---|---|---|---|
-| 1925299 | 1,540,715 | 623 | 85.5 | 783 | 111.5 |
-| 1996435 | 1,571,830 | 644 | 86.5 | 840 | 112.6 |
+| 1925299 | 1,540,715 | 623 | 103.9 | 1,032 | 133.4 |
+| 1996435 | 1,571,830 | 644 | 105.5 | 776 | 134.8 |
 
 One process per match, both running at the same time, streaming straight from the zip. Peak RSS is the maximum resident set size of the process.
 
@@ -380,6 +380,9 @@ Observations that need care (not validated):
   Pelvis rotation within the stride and measurement error both predict this. No attempt was made to separate them.
 - Head facing differs from the direction of travel by a median of 26 degrees even above 6 m/s. This is a mix of real head movement
   and the head noise floor of 13 degrees. It is not evidence about scanning.
+
+Follow-up: docs/RELIABILITY.md section 1 turns this observation into a bracket. The Monte Carlo SD is kept as the upper bound,
+the frame-to-frame jitter gives a lower bound, and the table carries both (`{segment}_sd_deg`, `{segment}_sd_low_deg`).
 
 Assumptions carried into Phase 2: isotropic Gaussian joint error, sigma = p90 / 2.5, independent joints.
 The table builder takes the conversion factor and the joint correlation as parameters (`OrientationConfig`),
