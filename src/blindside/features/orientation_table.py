@@ -15,7 +15,12 @@ Columns
     Point estimate of the facing angle for ``torso`` (shoulders), ``hips`` and ``head``
     (ears), from the published joint positions and the left/right labels.
 ``{segment}_mean_deg``, ``{segment}_sd_deg``
-    Circular mean and circular standard deviation of the Monte Carlo samples.
+    Circular mean and circular standard deviation of the Monte Carlo samples under
+    independent joint errors. The SD is the **upper bound** of the angular uncertainty.
+``{segment}_sd_low_deg``
+    The **lower bound**: the Monte Carlo SD with the left/right error correlation at which
+    it matches the frame-to-frame jitter of the angle (docs/RELIABILITY.md section 1).
+    The true angular error lies between the two bounds.
 ``{segment}_width_m``, ``{segment}_p90_cm``
     Ground-plane distance of the joint pair and the larger of its two ``p90_mae_cm``.
 ``head_nose_deg``, ``head_nose_sd_deg``
@@ -50,6 +55,7 @@ from blindside.geometry.orientation import (
     vector_angle,
 )
 from blindside.geometry.uncertainty import (
+    BOUND_CORRELATION,
     DEFAULT_N_SAMPLES,
     P90_TO_SIGMA,
     difference_sigma,
@@ -88,7 +94,10 @@ class OrientationConfig:
     p90_to_sigma
         Conversion from ``p90_mae_cm`` to a per-axis sigma (error model assumption).
     correlation
-        Assumed correlation between the errors of two joints of one player (assumption).
+        Assumed correlation between the errors of two joints of one player for the upper
+        bound (assumption, default independence).
+    lower_correlation
+        Left/right correlation per segment (torso, hips, head) for the lower bound.
     seed
         Seed of the random generator.
     velocity_half_window
@@ -100,6 +109,9 @@ class OrientationConfig:
     n_samples: int = DEFAULT_N_SAMPLES
     p90_to_sigma: float = P90_TO_SIGMA
     correlation: float = 0.0
+    lower_correlation: tuple[float, float, float] = tuple(
+        BOUND_CORRELATION["lower"][segment] for segment in SEGMENT_JOINTS
+    )
     seed: int = 0
     velocity_half_window: int = 5
     chunk_poses: int = 20_000
@@ -109,11 +121,16 @@ class OrientationConfig:
         return (
             f"n{self.n_samples}_f{self.p90_to_sigma:g}_r{self.correlation:g}"
             f"_s{self.seed}_h{self.velocity_half_window}_c{self.chunk_poses}"
+            "_l" + "-".join(f"{value:g}" for value in self.lower_correlation)
         )
 
 
 def orientation_columns(
-    xy: np.ndarray, p90: np.ndarray, config: OrientationConfig, rng: np.random.Generator
+    xy: np.ndarray,
+    p90: np.ndarray,
+    config: OrientationConfig,
+    rng: np.random.Generator,
+    rng_low: np.random.Generator | None = None,
 ) -> dict[str, np.ndarray]:
     """Angles and uncertainties for a batch of poses.
 
@@ -123,12 +140,17 @@ def orientation_columns(
         Ground-plane joint positions in metres, shape ``(poses, len(TABLE_JOINTS), 2)``.
     p90
         ``p90_mae_cm`` per joint, shape ``(poses, len(TABLE_JOINTS))``.
+    rng, rng_low
+        Generators for the upper and the lower bound. They are separate streams so that
+        the upper bound does not depend on whether a lower bound is computed.
 
     Returns
     -------
     Mapping from column name to an array of length ``poses``.
     """
     sigma = sigma_from_p90(p90, config.p90_to_sigma)
+    rng_low = rng_low if rng_low is not None else np.random.default_rng()
+    lower_correlation = dict(zip(SEGMENT_JOINTS, config.lower_correlation, strict=True))
     out: dict[str, np.ndarray] = {}
 
     forward = anatomical_forward(
@@ -153,6 +175,15 @@ def orientation_columns(
         out[f"{segment}_deg"] = np.degrees(facing)
         out[f"{segment}_mean_deg"] = np.degrees(wrap_angle(estimate.mean + FACING_ROTATION))
         out[f"{segment}_sd_deg"] = np.degrees(estimate.std)
+        lower = summarise_samples(
+            sample_vector_angles(
+                axis,
+                difference_sigma(sigma[:, li], sigma[:, ri], lower_correlation[segment]),
+                config.n_samples,
+                rng_low,
+            )
+        )
+        out[f"{segment}_sd_low_deg"] = np.degrees(lower.std)
         out[f"{segment}_width_m"] = np.hypot(axis[:, 0], axis[:, 1])
         out[f"{segment}_p90_cm"] = np.maximum(p90[:, li], p90[:, ri])
         out[f"{segment}_flip"] = resolve_front_back(facing, forward)[1]
@@ -233,6 +264,7 @@ def build_orientation_table(
     """
     config = config or OrientationConfig()
     rng = np.random.default_rng(config.seed)
+    rng_low = np.random.default_rng([config.seed, 1])
     n_joints = len(TABLE_JOINTS)
 
     pos_frame, pos_player = array("i"), array("i")
@@ -249,7 +281,7 @@ def build_orientation_table(
             return
         xy = np.frombuffer(batch_xy, dtype=float).reshape(-1, n_joints, 2)
         p90 = np.frombuffer(batch_p90, dtype=float).reshape(-1, n_joints)
-        columns = orientation_columns(xy, p90, config, rng)
+        columns = orientation_columns(xy, p90, config, rng, rng_low)
         chunks.append(
             {k: v if v.dtype == bool else v.astype(np.float32) for k, v in columns.items()}
         )

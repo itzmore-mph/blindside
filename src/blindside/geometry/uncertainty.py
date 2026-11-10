@@ -31,6 +31,26 @@ P90_TO_SIGMA = 2.50
 P90_TO_SIGMA_SENSITIVITY = (2.0, 2.5, 3.0)
 DEFAULT_N_SAMPLES = 200
 
+#: Correlation between the errors of the left and the right joint of a segment under the
+#: two bounds of the angular uncertainty. ``upper`` is independence. ``lower`` holds the
+#: correlations at which the Monte Carlo SD equals the frame-to-frame jitter of the angle
+#: (0.2 s window, both pose matches pooled, docs/RELIABILITY.md section 1). The true
+#: angular error lies between the two and cannot be identified without ground truth, so
+#: every quantity that uses angular uncertainty is computed under both.
+BOUND_CORRELATION: dict[str, dict[str, float]] = {
+    "upper": {"torso": 0.0, "hips": 0.0, "head": 0.0},
+    "lower": {"torso": 0.935, "hips": 0.975, "head": 0.979},
+}
+
+
+def bound_correlation(segment: str, bound: str) -> float:
+    """Left/right error correlation of a segment under the ``"lower"`` or ``"upper"`` bound."""
+    if bound not in BOUND_CORRELATION:
+        raise ValueError(f"bound must be one of {sorted(BOUND_CORRELATION)}, got {bound!r}")
+    if segment not in BOUND_CORRELATION[bound]:
+        raise ValueError(f"unknown segment {segment!r}")
+    return BOUND_CORRELATION[bound][segment]
+
 
 @dataclass(frozen=True)
 class AngularEstimate:

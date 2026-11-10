@@ -17,10 +17,12 @@ from blindside.geometry.orientation import (
     vector_angle,
 )
 from blindside.geometry.uncertainty import (
+    BOUND_CORRELATION,
     DEFAULT_N_SAMPLES,
     P90_TO_SIGMA,
     P90_TO_SIGMA_SENSITIVITY,
     AngularEstimate,
+    bound_correlation,
     difference_sigma,
     facing_uncertainty,
     sample_facing_angles,
@@ -32,6 +34,7 @@ from blindside.geometry.uncertainty import (
 )
 
 __all__ = [
+    "BOUND_CORRELATION",
     "DEFAULT_N_SAMPLES",
     "P90_TO_SIGMA",
     "P90_TO_SIGMA_SENSITIVITY",
@@ -39,6 +42,7 @@ __all__ = [
     "AngularEstimate",
     "anatomical_forward",
     "angular_difference",
+    "bound_correlation",
     "circular_mean",
     "circular_std",
     "difference_sigma",

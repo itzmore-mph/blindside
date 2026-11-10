@@ -81,7 +81,7 @@ Gate: tests green. Plot of hip orientation minus velocity heading as a function 
 
 Status: done. Results and the figure are in docs/FEASIBILITY.md section 9. Above 6 m/s the hip facing lies within 90 degrees
 of the direction of travel in 99.7% of poses, with a median absolute difference of 12 degrees and no bias.
-One full match takes 86 s and 0.8 GB peak memory. Open point for Phase 2: the Monte Carlo SD is about 3.5 times larger
+One full match takes about 105 s and 1.0 GB peak memory (86 s before the lower-bound columns were added). Open point for Phase 2: the Monte Carlo SD is about 3.5 times larger
 than the frame-to-frame change of the hip angle allows for independent noise (section 9.7 and 9.8).
 
 ## Phase 2: Reliability map
@@ -100,6 +100,26 @@ therefore not build on this data. Label assumptions.
 ```
 
 Gate: one composite reliability figure that is a candidate for README figure 1. All other plots go to docs/RELIABILITY.md.
+
+Additional task: bracket the angular uncertainty instead of reporting one number.
+
+1. Lower bound (jitter): for each segment, estimate high-frequency noise as the residual from a local
+   quadratic fit over a short window (test 0.2 s and 0.4 s), on the unwrapped angle. Convert to an SD.
+2. Upper bound: the Monte Carlo SD under independence (existing).
+3. Report the autocorrelation of the jitter residuals at lags of 1, 5 and 25 frames, and the left/right
+   correlation that would reconcile both bounds, using the existing correlation parameter.
+4. Break the bracket down by segment, speed band and distance to the camera.
+5. State clearly that the true angular error lies between the bounds and cannot be identified without ground truth.
+
+The camera side is not given in the data. Infer it from image_corners_projection and verify the inference
+on a few frames before using it. If it cannot be inferred reliably, drop the camera-distance breakdown and say so.
+
+Carry both bounds forward: every downstream quantity that uses angular uncertainty (in particular p_blind_side
+in Phase 4) is computed under the lower and the upper bound.
+
+Status of the additional task: done on 10 Nov, docs/RELIABILITY.md section 1. Bracket of the angular SD (lower to upper):
+torso 1.4 to 5.1 degrees, hips 2.0 to 12.0, head 2.0 to 13.2. Camera side inferred (negative y in both matches) and verified.
+The orientation table carries `{segment}_sd_deg` (upper) and `{segment}_sd_low_deg` (lower).
 
 ## Phase 3: Engagements and XY baseline
 
@@ -126,11 +146,14 @@ Gate: pre-registration committed before any outcome modelling with pose features
 Read CLAUDE.md and docs/PREREGISTRATION.md. Implement the pose features:
 - p_blind_side: probability that the presser lies outside the carrier's visual field at engagement start,
   computed from the Monte Carlo head and torso orientation samples (field of view half-angle as a parameter, default 100 degrees).
+  Compute it twice, under the lower and the upper bound of the angular uncertainty
+  (`blindside.geometry.uncertainty.bound_correlation`, docs/RELIABILITY.md section 1), and report both.
 - presser body alignment: angle between presser hip orientation and the direction to the carrier, with uncertainty.
 - carrier openness: carrier torso orientation relative to the attacking direction.
 
 Run exactly the pre-registered comparison: baseline versus baseline plus pose features. Report the performance difference
 with a paired cluster bootstrap confidence interval, and the descriptive effect of p_blind_side on the primary outcome in bins.
+Run the comparison under both uncertainty bounds. A result counts as robust only if it holds under both.
 Repeat using only engagements that pass the usability threshold. Report all results including a null result.
 Anything beyond the pre-registration goes into a clearly labelled exploratory section.
 ```

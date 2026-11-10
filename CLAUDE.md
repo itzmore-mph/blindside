@@ -88,6 +88,8 @@ Consequences for how we build:
 - The pose zip archives contain a macOS metadata member (`__MACOSX/._*.jsonl`). 47 frames per match lie outside the periods with empty `player_data`.
 - The z-axis is accurate relative to the player's centroid, not in the pitch coordinate system. Use x and y only for ground-plane headings.
 - XY tracking and body pose are generated separately. Minor misalignment is expected.
+- The main camera stands behind the touchline at negative y in both pose matches, at the halfway line.
+  Inferred from `image_corners_projection` (docs/RELIABILITY.md section 1.4), not given in the data.
 - About 97% of player identities are correct. Raw speeds need smoothing.
 - Dynamic event x/y are not scaled to a standard pitch size.
 - Dynamic event x/y are direction-normalised: the acting team attacks towards +x. For rows with `attacking_side == right_to_left`,
@@ -111,6 +113,10 @@ Consequences for how we build:
   which is close to the head noise floor. Never interpret a head turn without its uncertainty.
 - **Monte Carlo.** Sample joints N times (default 200), recompute the angle, report circular mean and circular standard deviation.
   Vectorise with NumPy. No per-frame Python loops over samples.
+- **Uncertainty is a bracket.** The Monte Carlo SD under independence is the upper bound, the frame-to-frame jitter of the angle
+  is the lower bound (docs/RELIABILITY.md section 1). The true angular error lies between them and cannot be identified without
+  ground truth. Every downstream quantity that uses angular uncertainty, in particular `p_blind_side`, is computed under both bounds
+  (`bound_correlation(segment, "lower" | "upper")`, table columns `{segment}_sd_low_deg` and `{segment}_sd_deg`).
 - **Circular statistics everywhere.** Never average angles arithmetically.
 - **Validation without ground truth.** Hip orientation versus velocity heading at speeds above a threshold,
   temporal smoothness, left/right symmetry checks. Report results as distributions, not single numbers.
