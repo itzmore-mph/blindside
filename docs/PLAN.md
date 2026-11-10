@@ -7,7 +7,7 @@ Budget assumption: 8 to 10 hours per week, about 45 to 50 hours in total.
 |---|---|---|---|
 | 0 Feasibility | 10 to 15 Nov | 3 | Passed on 10 Nov: 1,879 of 1,961 engagements have pose for both players (docs/FEASIBILITY.md section 7). Manual tasks still open |
 | 1 Orientation and uncertainty | 16 to 22 Nov | 10 | Passed on 10 Nov: 100 tests green, velocity check plotted (docs/FEASIBILITY.md section 9) |
-| 2 Reliability map | 23 to 29 Nov | 8 | One composite reliability figure |
+| 2 Reliability map | 23 to 29 Nov | 8 | Passed on 10 Nov: composite figure `docs/figures/reliability_composite.png`, findings in docs/RELIABILITY.md section 3 |
 | 3 Engagements and baseline | 30 Nov to 6 Dec | 10 | Pre-registration committed, XY baseline scored |
 | 4 Incremental value | 7 to 11 Dec | 6 | Result with confidence intervals, whatever it shows |
 | 5 Packaging | 12 to 16 Dec | 8 | Clean-clone run passes, README and video done |
@@ -120,6 +120,17 @@ in Phase 4) is computed under the lower and the upper bound.
 Status of the additional task: done on 10 Nov, docs/RELIABILITY.md section 1. Bracket of the angular SD (lower to upper):
 torso 1.4 to 5.1 degrees, hips 2.0 to 12.0, head 2.0 to 13.2. Camera side inferred (negative y in both matches) and verified.
 The orientation table carries `{segment}_sd_deg` (upper) and `{segment}_sd_low_deg` (lower).
+
+Status of the main task: done on 10 Nov, docs/RELIABILITY.md sections 2 and 3, `scripts/reliability_map.py`.
+Usable share at 20 degrees under the upper bound: torso 99.2%, hips 93.7%, head 87.3% (72 to 93% across sigma factors), above 99.8% under the lower bound.
+The published joint error is flat across the pitch while the jitter rises by up to 55% towards the far touchline.
+XY to pose offset: median 6.8 cm. The composite figure is the candidate for README figure 1.
+
+Open points carried into Phase 3:
+- `../opendata` holds the tracking files as Git LFS pointers and `git lfs` is not installed. The XY baseline features
+  "defenders within 5 and 10 meters" and "closing speed" need tracking for all 20 matches (about 2 GB).
+- `speed_avg`, `angle_of_engagement` and `interplayer_distance` (without `_start`) are measured over the engagement, not at its start.
+  The pre-registration must restrict the baseline to `_start` columns or to values computed from tracking up to `frame_start`.
 
 ## Phase 3: Engagements and XY baseline
 

@@ -87,9 +87,12 @@ Consequences for how we build:
   and carrier at `frame_start`, 89.1% (1,748) also at minus 0.5 s and minus 1.0 s. Source: docs/FEASIBILITY.md section 7.
 - The pose zip archives contain a macOS metadata member (`__MACOSX/._*.jsonl`). 47 frames per match lie outside the periods with empty `player_data`.
 - The z-axis is accurate relative to the player's centroid, not in the pitch coordinate system. Use x and y only for ground-plane headings.
-- XY tracking and body pose are generated separately. Minor misalignment is expected.
+- XY tracking and body pose are generated separately. Minor misalignment is expected. Measured: the hip midpoint lies 6.8 cm (median)
+  and 22 cm (99th percentile) from the tracking position (docs/RELIABILITY.md section 2.6).
 - The main camera stands behind the touchline at negative y in both pose matches, at the halfway line.
   Inferred from `image_corners_projection` (docs/RELIABILITY.md section 1.4), not given in the data.
+- The published `p90_mae_cm` does not grow with distance from the camera, the frame-to-frame jitter does
+  (head: 1.8 degrees next to the camera, 2.8 at the far touchline). Report the distance from the camera touchline next to pose features.
 - About 97% of player identities are correct. Raw speeds need smoothing.
 - Dynamic event x/y are not scaled to a standard pitch size.
 - Dynamic event x/y are direction-normalised: the acting team attacks towards +x. For rows with `attacking_side == right_to_left`,
