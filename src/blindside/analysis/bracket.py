@@ -161,6 +161,62 @@ def reconciling_correlation(ratio: float) -> float:
     return float(np.clip(1.0 - ratio**2, 0.0, 1.0))
 
 
+def calibrate_bound_correlation(
+    table: pd.DataFrame,
+    *,
+    half_window: int = HALF_WINDOWS[PRIMARY_WINDOW],
+    upper_correlation: float = 0.0,
+    segments: tuple[str, ...] = SEGMENTS,
+) -> dict[str, float]:
+    """Calibrate the left/right error correlation of the lower bound on orientation tables.
+
+    This is the calibration behind ``BOUND_CORRELATION["lower"]`` in
+    :mod:`blindside.geometry.uncertainty`. Run it on the tables of other matches to
+    recalibrate the bracket, then pass the result to the table builder::
+
+        table = pd.concat([cached_orientation_table(path, match_id) for ...])
+        rho = calibrate_bound_correlation(table)
+        config = OrientationConfig(lower_correlation=tuple(rho[s] for s in SEGMENT_JOINTS))
+
+    Per segment, the residual of the angle from a local quadratic fit is standardised by
+    the residual SD that the Monte Carlo SD of the same pose predicts (:func:`bound_ratio`).
+    The correlation is the one at which the Monte Carlo SD would shrink to the visible
+    jitter (:func:`reconciling_correlation`).
+
+    Parameters
+    ----------
+    table
+        Orientation table of one or more matches, pooled. Needs ``match_id``,
+        ``player_id``, ``frame`` and, per segment, ``{segment}_deg`` and
+        ``{segment}_sd_deg``. Only the upper bound columns are read, so the result does not
+        depend on the ``lower_correlation`` the table was built with.
+    half_window
+        Half window of the quadratic fit in frames, default the 0.2 s window.
+    upper_correlation
+        ``OrientationConfig.correlation`` the table was built with, 0 for independence.
+        The Monte Carlo SD then already carries a factor ``sqrt(1 - upper_correlation)``,
+        which is taken out again.
+    segments
+        Segments to calibrate.
+
+    Returns
+    -------
+    Correlation per segment in [0, 1], not rounded. It is a statement about the frame to
+    frame jitter only: error that is smooth in time is invisible to it, so the result is
+    the correlation of the lower bound, not an estimate of the true correlation.
+    """
+    if not -1.0 <= upper_correlation < 1.0:
+        raise ValueError("upper_correlation must lie in [-1, 1)")
+    ordered = sort_for_time_series(table)
+    calibrated = {}
+    for segment in segments:
+        residual = local_quadratic_residual(ordered, f"{segment}_deg", half_window)
+        upper = ordered[f"{segment}_sd_deg"].to_numpy(dtype=float)
+        ratio = bound_ratio(residual, upper, half_window) * np.sqrt(1.0 - upper_correlation)
+        calibrated[segment] = reconciling_correlation(ratio)
+    return calibrated
+
+
 def add_residuals(table: pd.DataFrame) -> pd.DataFrame:
     """Sorted copy of the table with ``{segment}_res_{h}`` residual columns for every window."""
     ordered = sort_for_time_series(table)

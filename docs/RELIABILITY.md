@@ -143,6 +143,8 @@ Measured:
   The 0.4 s estimate is about 35% larger and is reported as a sensitivity value only.
 - **Reconciling correlation.** The Monte Carlo SD equals the lower bound if the errors of the left and the right joint are
   correlated at 0.935 (torso), 0.975 (hips) and 0.979 (head). These are the values in `blindside.geometry.uncertainty.BOUND_CORRELATION`.
+  They are defaults for these two matches. `blindside.analysis.calibrate_bound_correlation(table)` recomputes them from any
+  orientation table, and a test checks that it returns the defaults on the two pose matches.
 - **Speed.** The lower bound rises with speed, by about 60 to 70% from below 2 m/s to above 6 m/s. The upper bound does not move.
 - **Distance to the camera.** The lower bound rises by 20 to 30% from the nearest to the farthest band. The upper bound is flat:
   the published `p90_mae_cm` does not grow with the distance to the camera.

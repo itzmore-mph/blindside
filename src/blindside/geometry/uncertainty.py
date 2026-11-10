@@ -37,6 +37,8 @@ DEFAULT_N_SAMPLES = 200
 #: (0.2 s window, both pose matches pooled, docs/RELIABILITY.md section 1). The true
 #: angular error lies between the two and cannot be identified without ground truth, so
 #: every quantity that uses angular uncertainty is computed under both.
+#: The ``lower`` values are defaults for this dataset. Recalibrate on other matches with
+#: :func:`blindside.analysis.bracket.calibrate_bound_correlation`.
 BOUND_CORRELATION: dict[str, dict[str, float]] = {
     "upper": {"torso": 0.0, "hips": 0.0, "head": 0.0},
     "lower": {"torso": 0.935, "hips": 0.975, "head": 0.979},
