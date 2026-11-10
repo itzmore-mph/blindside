@@ -28,8 +28,8 @@ Manual tasks for Moritz, status on 10 November 2026:
 - Discord question 3, figures inside the video: **not confirmed.** The two-figure limit is stated for the README only.
 - AI assistance: **treated as allowed, not explicitly confirmed.** The rules do not address it and Moritz found nothing to the contrary on Discord.
   It is disclosed through the commit trailer.
-- Publicis employment contract, side-activity and IP clauses: **open.** The rules make the participant responsible for employer permissions.
-  Must be settled before the repository is made public.
+- Employer permissions (side-activity and IP clauses): **settled.** Checked by Moritz on 10 November 2026: no clause applies.
+  The project is done in private time on private equipment, with open data only. The rules make the participant responsible for employer permissions.
 - Paris on 17 February 2027 in person: **feasible**, with annual leave. Remote talks are not accepted.
 - Solo or pair: **solo.**
 
