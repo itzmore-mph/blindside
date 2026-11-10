@@ -5,7 +5,7 @@ Budget assumption: 8 to 10 hours per week, about 45 to 50 hours in total.
 
 | Phase | Dates | Hours | Gate |
 |---|---|---|---|
-| 0 Feasibility | 10 to 15 Nov | 3 | Mostly done, see docs/FEASIBILITY.md. Remaining: full-match coverage count |
+| 0 Feasibility | 10 to 15 Nov | 3 | Passed on 10 Nov: 1,879 of 1,961 engagements have pose for both players (docs/FEASIBILITY.md section 7). Manual tasks still open |
 | 1 Orientation and uncertainty | 16 to 22 Nov | 10 | Unit tests green, velocity consistency check plotted |
 | 2 Reliability map | 23 to 29 Nov | 8 | One composite reliability figure |
 | 3 Engagements and baseline | 30 Nov to 6 Dec | 10 | Pre-registration committed, XY baseline scored |
@@ -28,8 +28,8 @@ Manual tasks for Moritz:
 - Confirm in-person availability for Paris on 17 February 2027. Remote talks are not accepted.
 - Decide solo or pair before phase 1.
 
-Status: schema, event structure, joint error and the sample-based checks are done (docs/FEASIBILITY.md).
-One number is still missing because it needs the full pose files: how many engagements have pose for both players.
+Status: done. Schema, event structure, joint error, the sample-based checks and the full-match coverage count
+are in docs/FEASIBILITY.md. Result: go, the cut rule does not apply.
 
 Prompt:
 

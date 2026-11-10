@@ -65,8 +65,10 @@ Consequences for how we build:
 - Tracking, dynamic events, phases of play, match metadata: `github.com/SkillCorner/opendata`, folder `data/matches/{match_id}/`.
   20 matches, **all 20 have dynamic events** (322 columns) and phases of play. Tracking `.jsonl` files are Git LFS.
 - Body pose for matches 1925299 and 1996435: `huggingface.co/datasets/SkillCorner/opendata-bodypose`, files `raw/{match_id}.jsonl.zip`.
-  Download size about 620 MB each (3.3 GB uncompressed JSON). Sizes and sha256 are in `data/bodypose/MANIFEST.json`.
-- One committed sample phase: `data/bodypose/sample_1925299_phase406.jsonl.gz` (309 pose frames, 12.3 s, 1.8 MB).
+  Download size about 620 MB each (3.3 GB uncompressed JSON). Sizes and sha256 are in `data/bodypose/MANIFEST.json` **of the opendata repo**.
+  Our copy with a pinned Hugging Face revision is `src/blindside/data/pose_manifest.json`. Downloads go to `data/raw/bodypose/` (git ignored).
+- One sample phase committed **in the opendata repo, not in ours**: `data/bodypose/sample_1925299_phase406.jsonl.gz` (309 pose frames, 12.3 s, 1.8 MB).
+- Local reference clone of opendata: `../opendata` (commit 4340d27, LFS tracking files not pulled). Override with `BLINDSIDE_OPENDATA_DIR`.
 - Verified findings from the data: `docs/FEASIBILITY.md`. Read it before writing loaders.
 - SkillCorner ships reference code in `src/data/pose_loading.py` and `src/features/pose_orientation.py` (MIT).
   Read it for format details, then write our own implementation. Disclose it in the README as prior art:
@@ -80,11 +82,16 @@ Consequences for how we build:
 - 29 joints: nose, neck, lEye, rEye, lEar, rEar, lShoulder, rShoulder, lElbow, rElbow, lWrist, rWrist, lThumb, rThumb, lPinky, rPinky,
   midHip, lHip, rHip, lKnee, rKnee, lAnkle, rAnkle, lHeel, rHeel, lBigToe, rBigToe, lSmallToe, rSmallToe.
 - Facing direction convention that passed the velocity check: left-to-right axis rotated by +90 degrees.
-- Across a full match only about a third of player-frames carry joints. Players near the ball are covered far more often. Measure this, do not assume it.
+- Across a full match 31.4% (1925299) and 36.4% (1996435) of player-frames carry joints. Among `is_detected` players it is 99.3%:
+  pose is missing almost only when the player is off camera. 95.8% of on-ball engagements (1,879 of 1,961) have pose for presser
+  and carrier at `frame_start`, 89.1% (1,748) also at minus 0.5 s and minus 1.0 s. Source: docs/FEASIBILITY.md section 7.
+- The pose zip archives contain a macOS metadata member (`__MACOSX/._*.jsonl`). 47 frames per match lie outside the periods with empty `player_data`.
 - The z-axis is accurate relative to the player's centroid, not in the pitch coordinate system. Use x and y only for ground-plane headings.
 - XY tracking and body pose are generated separately. Minor misalignment is expected.
 - About 97% of player identities are correct. Raw speeds need smoothing.
 - Dynamic event x/y are not scaled to a standard pitch size.
+- Dynamic event x/y are direction-normalised: the acting team attacks towards +x. For rows with `attacking_side == right_to_left`,
+  pitch coordinates are `(-x, -y)`. Mirror before joining events with pose or tracking. `third_start` follows the same normalisation.
 - EPV and pressure columns are populated on `player_possession` rows only.
 - On-ball engagements link to the pressed possession via `associated_player_possession_event_id` and `player_in_possession_id`.
   They already carry outcome flags (`force_backward`, `beaten_by_possession`, `stop_possession_danger`, `reduce_possession_danger`)
