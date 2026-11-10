@@ -128,3 +128,9 @@ def test_reader_reproduces_sample_counts_from_upstream_manifest() -> None:
         n_joints += sum(len(p["joints"]) for p in frame["player_data"] if p["joints"])
     assert n_frames == 309
     assert n_joints == 143_637
+
+
+def test_step_decodes_every_nth_line(pose_file: Path) -> None:
+    assert [frame["frame"] for frame in iter_pose_frames(pose_file, step=2)] == [10, 12]
+    with pytest.raises(ValueError):
+        next(iter_pose_frames(pose_file, step=0))

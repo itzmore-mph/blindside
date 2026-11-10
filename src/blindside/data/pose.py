@@ -39,14 +39,17 @@ def _is_pose_member(member: str) -> bool:
     return member.lower().endswith(".jsonl") and not is_metadata
 
 
-def _decode_lines(stream: IO[bytes]) -> Iterator[dict[str, Any]]:
-    for line in stream:
-        if line.strip():
+def _decode_lines(stream: IO[bytes], step: int = 1) -> Iterator[dict[str, Any]]:
+    for index, line in enumerate(stream):
+        if index % step == 0 and line.strip():
             yield json.loads(line)
 
 
-def iter_pose_frames(path: Path | str) -> Iterator[dict[str, Any]]:
+def iter_pose_frames(path: Path | str, step: int = 1) -> Iterator[dict[str, Any]]:
     """Yield pose frames one by one from a ``.jsonl.zip``, ``.jsonl.gz`` or ``.jsonl`` file.
+
+    ``step`` greater than 1 decodes only every ``step``-th line, which is much faster when
+    a thinned sample of frames is enough.
 
     Each frame is the decoded record as published: ``frame``, ``period``, ``ball_data``,
     ``player_data`` and so on. ``player_data[i]["joints"]`` is ``None`` when pose was not
@@ -57,6 +60,8 @@ def iter_pose_frames(path: Path | str) -> Iterator[dict[str, Any]]:
     ValueError
         For an unsupported file type or a zip that does not hold exactly one ``.jsonl``.
     """
+    if step < 1:
+        raise ValueError("step must be at least 1")
     path = Path(path)
     name = path.name.lower()
     if name.endswith(".zip"):
@@ -67,12 +72,12 @@ def iter_pose_frames(path: Path | str) -> Iterator[dict[str, Any]]:
                     f"{path.name} must contain exactly one .jsonl file, found {members}"
                 )
             with archive.open(members[0]) as stream:
-                yield from _decode_lines(stream)
+                yield from _decode_lines(stream, step)
     elif name.endswith(".gz"):
         with gzip.open(path, "rb") as stream:
-            yield from _decode_lines(stream)
+            yield from _decode_lines(stream, step)
     elif name.endswith(".jsonl"):
         with path.open("rb") as stream:
-            yield from _decode_lines(stream)
+            yield from _decode_lines(stream, step)
     else:
         raise ValueError(f"Unsupported pose file type: {path.name}")
