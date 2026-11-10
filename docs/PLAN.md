@@ -5,7 +5,7 @@ Budget assumption: 8 to 10 hours per week, about 45 to 50 hours in total.
 
 | Phase | Dates | Hours | Gate |
 |---|---|---|---|
-| 0 Feasibility | 10 to 15 Nov | 3 | Mostly done, see docs/FEASIBILITY.md. Remaining: full-match coverage count |
+| 0 Feasibility | 10 to 15 Nov | 3 | Passed on 10 Nov: 1,879 of 1,961 engagements have pose for both players (docs/FEASIBILITY.md section 7). Manual tasks still open |
 | 1 Orientation and uncertainty | 16 to 22 Nov | 10 | Unit tests green, velocity consistency check plotted |
 | 2 Reliability map | 23 to 29 Nov | 8 | One composite reliability figure |
 | 3 Engagements and baseline | 30 Nov to 6 Dec | 10 | Pre-registration committed, XY baseline scored |
@@ -20,16 +20,21 @@ with the blind-side metric shown descriptively on case examples.
 
 ## Phase 0: Feasibility (gate: go / no-go)
 
-Manual tasks for Moritz:
-- Join the Discord. Ask: (1) Do the 10 new tracking matches also have dynamic events, and where are they hosted?
-  (2) Does "work out of the box" tolerate a multi-GB download from Hugging Face in the full path if a fast path on the sample exists?
-  (3) Do figures inside the one-minute video count toward the two-figure limit? (Presumably not, confirm.)
-- Check the Publicis employment contract for side-activity and IP clauses before publishing the repo.
-- Confirm in-person availability for Paris on 17 February 2027. Remote talks are not accepted.
-- Decide solo or pair before phase 1.
+Manual tasks for Moritz, status on 10 November 2026:
+- Discord question 1, dynamic events for all matches: **answered by the data.** All 20 matches have dynamic events (docs/FEASIBILITY.md section 1).
+- Discord question 2, multi-GB download in the full path: **treated as allowed, not explicitly confirmed.** The rules require a repository
+  without the data that works out of the box, so a download step is implied. Moritz found nothing to the contrary in the rules or on Discord.
+  The fast path on the sample phase stays as the safeguard.
+- Discord question 3, figures inside the video: **not confirmed.** The two-figure limit is stated for the README only.
+- AI assistance: **treated as allowed, not explicitly confirmed.** The rules do not address it and Moritz found nothing to the contrary on Discord.
+  It is disclosed through the commit trailer.
+- Publicis employment contract, side-activity and IP clauses: **open.** The rules make the participant responsible for employer permissions.
+  Must be settled before the repository is made public.
+- Paris on 17 February 2027 in person: **feasible**, with annual leave. Remote talks are not accepted.
+- Solo or pair: **solo.**
 
-Status: schema, event structure, joint error and the sample-based checks are done (docs/FEASIBILITY.md).
-One number is still missing because it needs the full pose files: how many engagements have pose for both players.
+Status: done. Schema, event structure, joint error, the sample-based checks and the full-match coverage count
+are in docs/FEASIBILITY.md. Result: go, the cut rule does not apply.
 
 Prompt:
 
