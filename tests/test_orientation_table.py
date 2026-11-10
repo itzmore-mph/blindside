@@ -81,6 +81,10 @@ def test_table_rows_and_angles(pose_file: Path) -> None:
     # Same joint error, narrower baseline, larger angular uncertainty.
     assert runner["torso_sd_deg"].median() < 0.7 * runner["hips_sd_deg"].median()
     assert runner["hips_sd_deg"].median() < runner["head_sd_deg"].median()
+    # The lower bound uses the reconciling left/right correlation and is far smaller.
+    for segment, expected in (("torso", 0.255), ("hips", 0.158), ("head", 0.145)):
+        ratio = runner[f"{segment}_sd_low_deg"].median() / runner[f"{segment}_sd_deg"].median()
+        assert ratio == pytest.approx(expected, rel=0.1), segment
 
 
 def test_table_velocity_respects_period_boundaries(pose_file: Path) -> None:
