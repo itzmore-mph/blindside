@@ -31,3 +31,11 @@ def cache_dir() -> Path:
 def opendata_dir() -> Path:
     """Local clone of SkillCorner/opendata: ``$BLINDSIDE_OPENDATA_DIR`` or ``../opendata``."""
     return Path(os.environ.get(OPENDATA_DIR_ENV, Path.cwd().parent / "opendata"))
+
+
+SAMPLE_POSE_FILE = "sample_1925299_phase406.jsonl.gz"
+
+
+def sample_pose_path() -> Path:
+    """The pose sample phase committed in the opendata repository (309 frames, 12.3 s)."""
+    return opendata_dir() / "data" / "bodypose" / SAMPLE_POSE_FILE
