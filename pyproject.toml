@@ -9,6 +9,7 @@ license-files = ["LICENSE.md"]
 authors = [{ name = "Moritz Philipp Haaf" }]
 dependencies = [
     "matplotlib>=3.8",
+    "mplsoccer>=1.4",
     "numpy>=1.26",
     "pandas>=2.2",
     "pyarrow>=15",
