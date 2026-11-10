@@ -8,6 +8,7 @@ from blindside.analysis.bracket import (
     add_residuals,
     bound_ratio,
     bracket_summary,
+    calibrate_bound_correlation,
     jitter_sd,
     local_quadratic_residual,
     quadratic_smoother,
@@ -17,6 +18,8 @@ from blindside.analysis.bracket import (
     sort_for_time_series,
     white_noise_autocorrelation,
 )
+from blindside.data.manifest import pose_match_ids
+from blindside.features.orientation_table import orientation_cache_path
 from blindside.geometry.uncertainty import BOUND_CORRELATION, bound_correlation, facing_uncertainty
 
 
@@ -163,3 +166,46 @@ def test_bound_correlation_lookup() -> None:
         bound_correlation("hips", "middle")
     with pytest.raises(ValueError):
         bound_correlation("feet", "lower")
+
+
+def _correlated_noise_table(rho: float, upper_sd: float, n: int = 40_000) -> pd.DataFrame:
+    """White angular noise whose SD is what a left/right correlation ``rho`` leaves over."""
+    rng = np.random.default_rng(7)
+    noise = rng.normal(0.0, upper_sd * np.sqrt(1.0 - rho), n)
+    angle = 20.0 * np.sin(np.arange(n) / 200.0) + noise
+    table = _series(angle).rename(columns={"a_deg": "hips_deg"})
+    table["hips_sd_deg"] = upper_sd
+    return table
+
+
+def test_calibration_recovers_a_known_correlation() -> None:
+    table = _correlated_noise_table(rho=0.9, upper_sd=10.0)
+    calibrated = calibrate_bound_correlation(table, segments=("hips",))
+    assert calibrated == {"hips": pytest.approx(0.9, abs=0.005)}
+
+
+def test_calibration_accounts_for_the_correlation_of_the_upper_columns() -> None:
+    # The same noise, but the table was built with correlation 0.5: its SD is smaller.
+    table = _correlated_noise_table(rho=0.9, upper_sd=10.0)
+    table["hips_sd_deg"] *= np.sqrt(0.5)
+    calibrated = calibrate_bound_correlation(table, upper_correlation=0.5, segments=("hips",))
+    assert calibrated["hips"] == pytest.approx(0.9, abs=0.005)
+    with pytest.raises(ValueError):
+        calibrate_bound_correlation(table, upper_correlation=1.0, segments=("hips",))
+
+
+_MATCH_TABLES = [orientation_cache_path(f"{match_id}.jsonl.zip") for match_id in pose_match_ids()]
+
+
+@pytest.mark.skipif(
+    not all(path.exists() for path in _MATCH_TABLES),
+    reason="cached orientation tables of the pose matches are missing, "
+    "build them with scripts/orientation_tables.py",
+)
+def test_calibration_reproduces_the_defaults_on_the_pose_matches() -> None:
+    columns = ["match_id", "player_id", "frame"]
+    columns += [f"{segment}{suffix}" for segment in BOUND_CORRELATION["lower"]
+                for suffix in ("_deg", "_sd_deg")]  # fmt: skip
+    table = pd.concat([pd.read_parquet(path, columns=columns) for path in _MATCH_TABLES])
+    calibrated = calibrate_bound_correlation(table)
+    assert {s: round(v, 3) for s, v in calibrated.items()} == BOUND_CORRELATION["lower"]
