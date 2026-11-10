@@ -222,4 +222,20 @@ Everything else is exploratory and goes into a section with that title.
 
 ## 12. Deviations
 
-None. (Filled in after approval, with date and reason, if the plan has to change.)
+No deviation from the design so far.
+
+Clarifications of wording, recorded on 10 November 2026 while implementing the XY baseline and before any pose feature was computed.
+None of them changes a feature set, the outcome, the model class, the metric or the resampling.
+
+1. **Speeds (section 5).** "Central XY speed evaluated with data up to t0" is implemented as the mean velocity over the 0.5 s
+   that end at t0 (position at t0 minus position 0.5 s earlier). A central difference centred on t0 would need positions after t0.
+   The carrier's direction of travel uses the same displacement.
+2. **Penalty grid (section 7).** The ten log-spaced values between 0.001 and 100 are values of scikit-learn's `C`,
+   the inverse of the penalty strength.
+3. **Defenders within 10 m (section 5).** The count includes the presser.
+4. **Inclusion criterion 3.** The two positions must lie in the same period.
+5. **Pose window (section 3).** "Within plus or minus 2 pose frames" means pose frames at most 2 away from `2.5 * frame_start`,
+   which is a half frame for odd tracking frames. This reproduces the 1,879 engagements of docs/FEASIBILITY.md section 7.
+
+Observation after the baseline was fitted (docs/BASELINE.md section 2): `team_out_of_possession_phase_type` may be assigned
+with hindsight by the data provider. It stays in the baseline as registered. If it leaks, it favours the baseline.

@@ -8,7 +8,7 @@ Budget assumption: 8 to 10 hours per week, about 45 to 50 hours in total.
 | 0 Feasibility | 10 to 15 Nov | 3 | Passed on 10 Nov: 1,879 of 1,961 engagements have pose for both players (docs/FEASIBILITY.md section 7). Manual tasks still open |
 | 1 Orientation and uncertainty | 16 to 22 Nov | 10 | Passed on 10 Nov: 100 tests green, velocity check plotted (docs/FEASIBILITY.md section 9) |
 | 2 Reliability map | 23 to 29 Nov | 8 | Passed on 10 Nov: composite figure `docs/figures/reliability_composite.png`, findings in docs/RELIABILITY.md section 3 |
-| 3 Engagements and baseline | 30 Nov to 6 Dec | 10 | Pre-registration committed, XY baseline scored |
+| 3 Engagements and baseline | 30 Nov to 6 Dec | 10 | Passed on 10 Nov: pre-registration committed (fe7ad6e), XY baseline scored (docs/BASELINE.md) |
 | 4 Incremental value | 7 to 11 Dec | 6 | Result with confidence intervals, whatever it shows |
 | 5 Packaging | 12 to 16 Dec | 8 | Clean-clone run passes, README and video done |
 | Buffer | 17 to 18 Dec | 0 | Submit on 17 Dec |
@@ -150,6 +150,11 @@ Report out-of-sample performance with cluster bootstrap confidence intervals and
 ```
 
 Gate: pre-registration committed before any outcome modelling with pose features.
+
+Status: done on 10 Nov. Primary outcome: possession loss of the pressed possession. Test set: 1,875 engagements in 1,382 possessions,
+217 events, so the cut rule does not apply. XY baseline on the pose matches: log loss 0.310 against 0.361 for the constant prediction
+(difference minus 0.050, 95% interval minus 0.071 to minus 0.030), ROC AUC 0.76. Tracking is fetched by `python -m blindside.data.tracking`.
+New dependency: scikit-learn. Phase 4 starts from `data/cache/baseline/test_predictions.parquet` and docs/BASELINE.md section 3.
 
 ## Phase 4: Incremental value of pose
 

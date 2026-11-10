@@ -69,6 +69,8 @@ Consequences for how we build:
   Our copy with a pinned Hugging Face revision is `src/blindside/data/pose_manifest.json`. Downloads go to `data/raw/bodypose/` (git ignored).
 - One sample phase committed **in the opendata repo, not in ours**: `data/bodypose/sample_1925299_phase406.jsonl.gz` (309 pose frames, 12.3 s, 1.8 MB).
 - Local reference clone of opendata: `../opendata` (commit 4340d27, LFS tracking files not pulled). Override with `BLINDSIDE_OPENDATA_DIR`.
+- Tracking is downloaded by `python -m blindside.data.tracking` from the GitHub LFS media endpoint at commit 4340d27 into
+  `data/raw/tracking/` (20 files, 1.8 GB, sha256 from `src/blindside/data/tracking_manifest.json`). `git-lfs` is not needed.
 - Verified findings from the data: `docs/FEASIBILITY.md`. Read it before writing loaders.
 - SkillCorner ships reference code in `src/data/pose_loading.py` and `src/features/pose_orientation.py` (MIT).
   Read it for format details, then write our own implementation. Disclose it in the README as prior art:
@@ -102,6 +104,8 @@ Consequences for how we build:
   They already carry outcome flags (`force_backward`, `beaten_by_possession`, `stop_possession_danger`, `reduce_possession_danger`)
   and XY context (`interplayer_distance_start`, `angle_of_engagement`, `goal_side_start`, `speed_avg`).
   Several engagements can target the same possession. Always cluster by possession.
+- 57% of on-ball engagements start before the pressed possession starts (median 0.2 s): the carrier is then still a receiver.
+- Primary outcome (docs/PREREGISTRATION.md): possession loss of the pressed possession. 217 events in 1,875 included test engagements.
 
 ## Method conventions
 
@@ -159,6 +163,7 @@ docs/
   PREREGISTRATION.md
   FEASIBILITY.md
   RELIABILITY.md
+  BASELINE.md
 notebooks/     # optional walkthrough, not part of the judged submission
 README.md      # the judged document: max 1000 words, max two figures or tables
 LICENSE.md
