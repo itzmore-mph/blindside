@@ -5,12 +5,12 @@ Budget assumption: 8 to 10 hours per week, about 45 to 50 hours in total.
 
 | Phase | Dates | Hours | Gate |
 |---|---|---|---|
-| 0 Feasibility | 10 to 15 Nov | 6 | Go / no-go on sample size and schema |
+| 0 Feasibility | 10 to 15 Nov | 3 | Mostly done, see docs/FEASIBILITY.md. Remaining: full-match coverage count |
 | 1 Orientation and uncertainty | 16 to 22 Nov | 10 | Unit tests green, velocity consistency check plotted |
-| 2 Reliability map | 23 to 29 Nov | 8 | Three final figures for deliverable 2 |
+| 2 Reliability map | 23 to 29 Nov | 8 | One composite reliability figure |
 | 3 Engagements and baseline | 30 Nov to 6 Dec | 10 | Pre-registration committed, XY baseline scored |
 | 4 Incremental value | 7 to 11 Dec | 6 | Result with confidence intervals, whatever it shows |
-| 5 Packaging | 12 to 16 Dec | 8 | Clean-clone run passes, abstract and video done |
+| 5 Packaging | 12 to 16 Dec | 8 | Clean-clone run passes, README and video done |
 | Buffer | 17 to 18 Dec | 0 | Submit on 17 Dec |
 
 Cut rule: if phase 0 or phase 3 shows too few usable engagements, drop phase 4 and submit deliverables 1 and 2
@@ -28,32 +28,34 @@ Manual tasks for Moritz:
 - Confirm in-person availability for Paris on 17 February 2027. Remote talks are not accepted.
 - Decide solo or pair before phase 1.
 
+Status: schema, event structure, joint error and the sample-based checks are done (docs/FEASIBILITY.md).
+One number is still missing because it needs the full pose files: how many engagements have pose for both players.
+
 Prompt:
 
 ```
-Read CLAUDE.md. Then clone github.com/SkillCorner/opendata into ../opendata (read only reference).
-Read data/bodypose/README.md, the top-level README, src/ loaders and the tutorial in notebooks/tutorials/05_Body_Pose.
+Read CLAUDE.md and docs/FEASIBILITY.md. Scaffold the repo (uv, pyproject, ruff, pytest, src layout, MIT LICENSE.md, .gitignore with data/).
+Clone github.com/SkillCorner/opendata into ../opendata as a read-only reference.
 
-Do not write analysis code yet. Produce docs/FEASIBILITY.md answering, with evidence from the data:
-1. Exact body pose schema: joint names and indices, units, axis conventions, how the predicted error is stored.
-2. Which joints can define shoulder line, hip line and head direction.
-3. In the dynamic events of matches 1925299 and 1996435: all event types and subtypes, the row count of
-   on-ball engagements per subtype, and which columns link an engagement to the pressed player possession.
-4. Using only the committed sample phase: share of frames where both the presser and the ball carrier are detected
-   and have pose. Extrapolate cautiously to a full match and state the uncertainty.
-5. Distribution of the per-joint predicted error for shoulders, hips and head joints.
-6. Size and structure of the Hugging Face files and a streaming strategy that keeps memory under 4 GB.
+Implement only src/blindside/data: a downloader for the two pose archives from Hugging Face (cache in data/raw, verify sha256 against
+MANIFEST.json, resume on failure) and a streaming reader that never holds more than one frame in memory.
 
-End with a go / no-go recommendation for deliverable 3 based on the expected number of usable engagements.
-State every number's source. If something cannot be determined from the sample, say so.
+Then write scripts/coverage.py and append its results to docs/FEASIBILITY.md section 7:
+1. Share of player-frames with joints, per match and per period.
+2. For every on-ball engagement in both pose matches: does the presser have pose at frame_start, does the carrier, do both
+   (allow a window of plus or minus 2 pose frames). Break down by event_subtype and by pitch third.
+3. The same for engagement start minus 0.5 s and minus 1.0 s, because the blind-side feature needs the approach, not only the contact.
+4. Distribution of p90_mae_cm for shoulders, hips and ears across both full matches, compared with the sample values in section 4.
+
+End with the number of usable engagements and a go / no-go against the gate. State every number's source.
 ```
 
-Gate: at least roughly 300 usable engagements across both matches for deliverable 3. Below that, apply the cut rule.
+Gate: at least roughly 300 engagements with pose for both players across both matches. Expected from the sample: well above that. Below it, apply the cut rule.
 
 ## Phase 1: Orientation and uncertainty
 
 ```
-Read CLAUDE.md and docs/FEASIBILITY.md. Scaffold the repo (uv, pyproject, ruff, pytest, src layout).
+Read CLAUDE.md and docs/FEASIBILITY.md.
 
 Implement src/blindside/geometry:
 - circular.py: circular mean, circular std, angular difference, with tests.
@@ -65,8 +67,8 @@ Implement src/blindside/geometry:
 Tests: synthetic skeletons with known facing angles, including rotated, mirrored and noisy cases.
 Verify that the Monte Carlo output matches an analytic small-angle approximation for a simple two-joint case.
 
-Then implement the streaming pose loader and a cached per-frame orientation table (parquet) for the sample phase first,
-full matches second. Report runtime and memory for one full match.
+Then build a cached per-frame orientation table (parquet, git ignored) for the sample phase first,
+full matches second. Reproduce the sample numbers in docs/FEASIBILITY.md section 4 and 5 as a regression test. Report runtime and memory for one full match.
 ```
 
 Gate: tests green. Plot of hip orientation minus velocity heading as a function of speed looks sensible
@@ -96,12 +98,12 @@ Read CLAUDE.md and docs/FEASIBILITY.md.
 First, draft docs/PREREGISTRATION.md and stop for my review. It must fix: unit of analysis (one on-ball engagement),
 inclusion criteria, the primary outcome, the XY-only baseline feature set, the pose feature set, the model class,
 the evaluation metric and the resampling scheme. Propose two candidate primary outcomes with pros and cons
-(for example possession_epv_total of the pressed possession, or a binary ball-loss or forced-backward outcome)
+(for example SkillCorner's own force_backward flag, possession loss of the associated possession, or possession_epv_total)
 and recommend one. Do not look at outcome distributions conditional on pose features while drafting.
 
 After I approve: implement src/blindside/features (engagement extraction, XY baseline features: distance, closing speed,
 approach angle, defenders within 5 and 10 meters, pitch zone, SkillCorner pressure and difficulty labels at start).
-Fit the XY baseline on all matches that have dynamic events but no body pose, and evaluate it on the two pose matches,
+Fit the XY baseline on the 18 matches without body pose (about 15,600 engagements) and evaluate it on the two pose matches,
 so the baseline is as strong as the data allows and the pose matches stay untouched for the incremental test.
 Report out-of-sample performance with cluster bootstrap confidence intervals and leave-one-match-out.
 ```

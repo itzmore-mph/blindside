@@ -4,7 +4,7 @@ Project context for Claude Code. Read this file fully before any task.
 
 ## Project
 
-Working title: **blindside: reliability-aware body orientation for pressing analysis**
+Name: **blindside**. Blind-side pressing from broadcast body pose, with measurement uncertainty.
 
 Entry for the SkillCorner X PySport Analytics Cup 2.0 (football challenge).
 Submission deadline: 18 December 2026. Internal deadline: 16 December 2026.
@@ -62,33 +62,46 @@ Consequences for how we build:
 
 ## Data sources
 
-- Tracking, dynamic events, phases of play, match metadata: `github.com/SkillCorner/opendata`, folder `data/matches/{match_id}/`
-- Body pose (two matches, 1925299 and 1996435, about 3.3 GB JSON each): `huggingface.co/datasets/SkillCorner/opendata-bodypose`
-- One committed sample phase of play: `data/bodypose/` in the opendata repo
-- Schema of the body pose files: `data/bodypose/README.md` in the opendata repo. **Read it before writing any loader. Do not assume joint names, units or axis conventions.**
-- Reference loaders: `src/` in the opendata repo. Read them for format details, then write our own code.
+- Tracking, dynamic events, phases of play, match metadata: `github.com/SkillCorner/opendata`, folder `data/matches/{match_id}/`.
+  20 matches, **all 20 have dynamic events** (322 columns) and phases of play. Tracking `.jsonl` files are Git LFS.
+- Body pose for matches 1925299 and 1996435: `huggingface.co/datasets/SkillCorner/opendata-bodypose`, files `raw/{match_id}.jsonl.zip`.
+  Download size about 620 MB each (3.3 GB uncompressed JSON). Sizes and sha256 are in `data/bodypose/MANIFEST.json`.
+- One committed sample phase: `data/bodypose/sample_1925299_phase406.jsonl.gz` (309 pose frames, 12.3 s, 1.8 MB).
+- Verified findings from the data: `docs/FEASIBILITY.md`. Read it before writing loaders.
+- SkillCorner ships reference code in `src/data/pose_loading.py` and `src/features/pose_orientation.py` (MIT).
+  Read it for format details, then write our own implementation. Disclose it in the README as prior art:
+  their helper gates shoulder orientation with a hard 15 cm threshold, ours propagates the error into an angular uncertainty.
 
-### Known data facts (from the opendata README)
+### Known data facts (verified, see docs/FEASIBILITY.md)
 
-- Tracking is 10 fps, body pose is 25 fps with XY interpolated to 25 fps.
+- Tracking and events are 10 fps, body pose is 25 fps. `pose_frame = 2.5 * tracking_frame`. Every 5th pose frame aligns exactly.
 - Coordinates in meters, origin at pitch centre, x is the long side.
-- Body pose exists only for detected players (`is_detected`).
-- The z-axis is accurate relative to the player's centroid, not in the pitch coordinate system.
-  Consequence: use joint positions relative to the player, avoid absolute heights.
-- XY tracking and body pose are generated separately. Minor misalignment is expected. Quantify it, do not ignore it.
-- Each joint has a predicted error in centimeters, defined so that 90% of estimates lie within that
-  radius of the true joint position, relative to the player's pose.
+- Pose record: `player_data[i].joints[name] = {"xyz": [x, y, z], "p90_mae_cm": float}`. `joints` is null when pose was not resolved.
+- 29 joints: nose, neck, lEye, rEye, lEar, rEar, lShoulder, rShoulder, lElbow, rElbow, lWrist, rWrist, lThumb, rThumb, lPinky, rPinky,
+  midHip, lHip, rHip, lKnee, rKnee, lAnkle, rAnkle, lHeel, rHeel, lBigToe, rBigToe, lSmallToe, rSmallToe.
+- Facing direction convention that passed the velocity check: left-to-right axis rotated by +90 degrees.
+- Across a full match only about a third of player-frames carry joints. Players near the ball are covered far more often. Measure this, do not assume it.
+- The z-axis is accurate relative to the player's centroid, not in the pitch coordinate system. Use x and y only for ground-plane headings.
+- XY tracking and body pose are generated separately. Minor misalignment is expected.
 - About 97% of player identities are correct. Raw speeds need smoothing.
 - Dynamic event x/y are not scaled to a standard pitch size.
 - EPV and pressure columns are populated on `player_possession` rows only.
+- On-ball engagements link to the pressed possession via `associated_player_possession_event_id` and `player_in_possession_id`.
+  They already carry outcome flags (`force_backward`, `beaten_by_possession`, `stop_possession_danger`, `reduce_possession_danger`)
+  and XY context (`interplayer_distance_start`, `angle_of_engagement`, `goal_side_start`, `speed_avg`).
+  Several engagements can target the same possession. Always cluster by possession.
 
 ## Method conventions
 
 - **Error model.** Treat the per-joint error as an isotropic 3D Gaussian. A 90% radius r90 corresponds to
   sigma = r90 / 2.50 (square root of the 0.90 quantile of chi-square with 3 degrees of freedom).
-  This is an assumption. State it in the notebook and run a sensitivity check with sigma = r90 / 2.0 and r90 / 3.0.
-- **Orientation.** Torso facing = horizontal normal of the shoulder line, hips = horizontal normal of the hip line,
-  head = derived from head joints as available in the schema. Resolve the front/back ambiguity explicitly and test it.
+  This is an assumption. State it in the README and run a sensitivity check with sigma = r90 / 2.0 and r90 / 3.0.
+- **Orientation.** Torso facing = ground-plane normal of lShoulder to rShoulder, hips = normal of lHip to rHip,
+  head = normal of lEar to rEar (compare against the ear-midpoint to nose vector and keep the more stable one).
+  The errors of two joints of one player are probably correlated. Independence is our assumption and it overstates angular noise if they are. Say so.
+- **Baseline widths matter.** Shoulder width is about 0.37 m, hip width 0.22 m, ear width 0.18 m. The same joint error therefore gives
+  roughly 5 degrees of angular noise for the torso and 12 degrees for hips and head. Head-versus-torso differences have a median of 15 degrees,
+  which is close to the head noise floor. Never interpret a head turn without its uncertainty.
 - **Monte Carlo.** Sample joints N times (default 200), recompute the angle, report circular mean and circular standard deviation.
   Vectorise with NumPy. No per-frame Python loops over samples.
 - **Circular statistics everywhere.** Never average angles arithmetically.
@@ -120,12 +133,13 @@ src/blindside/
   features/    # engagement extraction, XY baseline features, pose features
   analysis/    # reliability map, incremental value test
   viz/         # plotting helpers
+  cli.py       # `blindside reproduce [--fast]`
 tests/
 docs/
   PLAN.md
   PREREGISTRATION.md
   FEASIBILITY.md
-  cli.py       # `blindside reproduce [--fast]`
+  RELIABILITY.md
 notebooks/     # optional walkthrough, not part of the judged submission
 README.md      # the judged document: max 1000 words, max two figures or tables
 LICENSE.md
