@@ -30,6 +30,9 @@ Columns
 ``{segment}_flip``
     True where ``{segment}_deg`` points more than 90 degrees away from ``forward_deg``,
     which indicates swapped left/right labels. The angle columns are not altered.
+``centroid_dx_m``, ``centroid_dy_m``
+    Pose centroid (midpoint of the two hip joints) minus the tracking position ``x``, ``y``.
+    XY tracking and body pose are generated separately, so this offset is not zero.
 """
 
 from __future__ import annotations
@@ -82,6 +85,9 @@ _J = {name: index for index, name in enumerate(TABLE_JOINTS)}
 
 ProgressCallback = Callable[[int], None]
 
+#: Version of the table schema, part of the cache key. Raise it when columns change.
+TABLE_VERSION = 2
+
 
 @dataclass(frozen=True)
 class OrientationConfig:
@@ -121,7 +127,7 @@ class OrientationConfig:
         return (
             f"n{self.n_samples}_f{self.p90_to_sigma:g}_r{self.correlation:g}"
             f"_s{self.seed}_h{self.velocity_half_window}_c{self.chunk_poses}"
-            "_l" + "-".join(f"{value:g}" for value in self.lower_correlation)
+            "_l" + "-".join(f"{value:g}" for value in self.lower_correlation) + f"_v{TABLE_VERSION}"
         )
 
 
@@ -146,7 +152,9 @@ def orientation_columns(
 
     Returns
     -------
-    Mapping from column name to an array of length ``poses``.
+    Mapping from column name to an array of length ``poses``. ``centroid_x_m`` and
+    ``centroid_y_m`` are the hip midpoint in pitch coordinates. The table stores them as an
+    offset from the tracking position.
     """
     sigma = sigma_from_p90(p90, config.p90_to_sigma)
     rng_low = rng_low if rng_low is not None else np.random.default_rng()
@@ -211,6 +219,10 @@ def orientation_columns(
     )
     out["head_nose_deg"] = np.degrees(vector_angle(nose_vector))
     out["head_nose_sd_deg"] = np.degrees(estimate.std)
+
+    centroid = (xy[:, _J["lHip"]] + xy[:, _J["rHip"]]) / 2.0
+    out["centroid_x_m"] = centroid[:, 0]
+    out["centroid_y_m"] = centroid[:, 1]
     return out
 
 
@@ -353,6 +365,8 @@ def build_orientation_table(
         table["heading_deg"] = heading.astype(np.float32)
         for name in chunks[0]:
             table[name] = np.concatenate([chunk[name] for chunk in chunks])
+        table["centroid_dx_m"] = table.pop("centroid_x_m") - xy[:, 0]
+        table["centroid_dy_m"] = table.pop("centroid_y_m") - xy[:, 1]
     return pd.DataFrame(table)
 
 

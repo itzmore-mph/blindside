@@ -186,3 +186,29 @@ def test_sample_reproduces_feasibility_section_5(sample_table: pd.DataFrame) -> 
     # The check itself: agreement improves monotonically with speed, no flips at sprint speed.
     assert hips["median_abs_deg"].is_monotonic_decreasing
     assert hips["share_above_90"].iloc[-1] == 0.0
+
+
+def test_centroid_offset_is_hip_midpoint_minus_tracking(pose_file: Path, tmp_path: Path) -> None:
+    table = build_orientation_table(pose_file, match_id=7)
+    # In the fixture the skeleton stands exactly on its tracking position.
+    assert np.abs(table[["centroid_dx_m", "centroid_dy_m"]].to_numpy()).max() < 1e-5
+
+    # Shift the tracking position of every player by a known amount.
+    shifted = tmp_path / "shifted.jsonl"
+    lines = []
+    for line in pose_file.read_text().splitlines():
+        record = json.loads(line)
+        for player in record["player_data"]:
+            player["x"] -= 0.3
+            player["y"] += 0.1
+        lines.append(json.dumps(record))
+    shifted.write_text("\n".join(lines) + "\n")
+    table = build_orientation_table(shifted, match_id=7)
+    np.testing.assert_allclose(table["centroid_dx_m"], 0.3, atol=1e-5)
+    np.testing.assert_allclose(table["centroid_dy_m"], -0.1, atol=1e-5)
+
+
+def test_cache_key_carries_the_table_version() -> None:
+    from blindside.features.orientation_table import TABLE_VERSION
+
+    assert OrientationConfig().key().endswith(f"_v{TABLE_VERSION}")
