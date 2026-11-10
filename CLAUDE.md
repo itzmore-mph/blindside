@@ -130,6 +130,8 @@ Consequences for how we build:
 - All code, comments and docs in English. No em dashes in any text.
 - Plots with matplotlib and mplsoccer. One consistent style module in `src/blindside/viz/style.py`.
 - Small, reviewable commits. Never commit data files or credentials.
+- Every commit message ends with the trailer `Co-Authored-By: Claude <noreply@anthropic.com>`.
+  Required by the submission rules (stated by Moritz on 10 November 2026). This overrides the global no-trailer preference for this repository only.
 
 ## Repository layout
 
