@@ -6,7 +6,7 @@ Budget assumption: 8 to 10 hours per week, about 45 to 50 hours in total.
 | Phase | Dates | Hours | Gate |
 |---|---|---|---|
 | 0 Feasibility | 10 to 15 Nov | 3 | Passed on 10 Nov: 1,879 of 1,961 engagements have pose for both players (docs/FEASIBILITY.md section 7). Manual tasks still open |
-| 1 Orientation and uncertainty | 16 to 22 Nov | 10 | Unit tests green, velocity consistency check plotted |
+| 1 Orientation and uncertainty | 16 to 22 Nov | 10 | Passed on 10 Nov: 100 tests green, velocity check plotted (docs/FEASIBILITY.md section 9) |
 | 2 Reliability map | 23 to 29 Nov | 8 | One composite reliability figure |
 | 3 Engagements and baseline | 30 Nov to 6 Dec | 10 | Pre-registration committed, XY baseline scored |
 | 4 Incremental value | 7 to 11 Dec | 6 | Result with confidence intervals, whatever it shows |
@@ -78,6 +78,11 @@ full matches second. Reproduce the sample numbers in docs/FEASIBILITY.md section
 
 Gate: tests green. Plot of hip orientation minus velocity heading as a function of speed looks sensible
 (tight around zero at sprint speed). If not, debug the axis conventions before moving on.
+
+Status: done. Results and the figure are in docs/FEASIBILITY.md section 9. Above 6 m/s the hip facing lies within 90 degrees
+of the direction of travel in 99.7% of poses, with a median absolute difference of 12 degrees and no bias.
+One full match takes 86 s and 0.8 GB peak memory. Open point for Phase 2: the Monte Carlo SD is about 3.5 times larger
+than the frame-to-frame change of the hip angle allows for independent noise (section 9.7 and 9.8).
 
 ## Phase 2: Reliability map
 
