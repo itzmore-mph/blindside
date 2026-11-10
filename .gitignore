@@ -180,5 +180,5 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# data files
-data/
+# data files (root only, so that src/blindside/data/ stays tracked)
+/data/
