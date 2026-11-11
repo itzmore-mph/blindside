@@ -28,8 +28,13 @@ import pandas as pd
 
 from blindside.data.paths import cache_dir
 from blindside.data.pose import iter_pose_frames, tracking_to_pose_frame
-from blindside.geometry.circular import angular_difference, circular_mean, circular_std
-from blindside.geometry.orientation import SEGMENT_JOINTS, vector_angle
+from blindside.geometry.circular import (
+    angular_difference,
+    circular_mean,
+    circular_std,
+    wrap_angle,
+)
+from blindside.geometry.orientation import FACING_ROTATION, SEGMENT_JOINTS, vector_angle
 from blindside.geometry.uncertainty import (
     DEFAULT_N_SAMPLES,
     P90_TO_SIGMA,
@@ -282,6 +287,8 @@ def pose_feature_table(
     -------
     One row per engagement, same index: :data:`POSE_FEATURES`, the circular SD of the
     samples ``carrier_head_sd_deg``, ``carrier_torso_sd_deg``, ``presser_hips_sd_deg`` and
+    samples ``carrier_head_sd_deg``, ``carrier_torso_sd_deg``, ``presser_hips_sd_deg``, the
+    point-estimate facing angles ``carrier_head_deg``, ``carrier_torso_deg`` and
     ``presser_off_head_deg``, ``presser_off_torso_deg``: the absolute angle between the
     carrier's point-estimate facing direction and the direction to the presser.
     """
@@ -312,7 +319,8 @@ def pose_feature_table(
         axis = carrier[[f"{right}_x", f"{right}_y"]].to_numpy(dtype=float) - carrier[
             [f"{left}_x", f"{left}_y"]
         ].to_numpy(dtype=float)
-        facing = vector_angle(axis) + np.pi / 2.0
+        facing = wrap_angle(vector_angle(axis) + FACING_ROTATION)
+        out[f"carrier_{segment}_deg"] = np.degrees(facing)
         out[f"presser_off_{segment}_deg"] = np.degrees(
             np.abs(angular_difference(to_presser, facing))
         )
