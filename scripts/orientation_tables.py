@@ -34,7 +34,7 @@ from blindside.analysis.consistency import (
 )
 from blindside.data.download import download_pose_archive
 from blindside.data.manifest import pose_match_ids
-from blindside.data.paths import sample_pose_path
+from blindside.data.opendata import sample_pose_file
 from blindside.features.orientation_table import (
     OrientationConfig,
     cached_orientation_table,
@@ -251,7 +251,7 @@ def main(argv: list[str] | None = None) -> int:
 
     config = OrientationConfig()
     sample = cached_orientation_table(
-        sample_pose_path(), SAMPLE_MATCH_ID, config, refresh=args.refresh
+        sample_pose_file(), SAMPLE_MATCH_ID, config, refresh=args.refresh
     )
     match_ids = pose_match_ids()
     with ProcessPoolExecutor(max_workers=len(match_ids)) as pool:

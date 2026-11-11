@@ -27,8 +27,8 @@ import pandas as pd
 from blindside.data.download import (
     DownloadError,
     ProgressCallback,
-    _print_progress,
     download_file,
+    print_progress,
 )
 from blindside.data.paths import cache_dir, tracking_raw_dir
 
@@ -243,7 +243,7 @@ def main(argv: list[str] | None = None) -> int:
     for match_id in args.match or tracking_match_ids():
         try:
             path = download_tracking(
-                match_id, args.dest_dir, progress=_print_progress(str(match_id))
+                match_id, args.dest_dir, progress=print_progress(str(match_id))
             )
         except (DownloadError, ValueError) as error:
             print(f"error: {error}", file=sys.stderr)

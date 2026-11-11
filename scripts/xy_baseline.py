@@ -27,16 +27,12 @@ from blindside.analysis.baseline import (
     predict_probability,
     tune_and_fit,
 )
-from blindside.data.download import download_pose_archive
-from blindside.data.manifest import pose_match_ids
+from blindside.analysis.pipeline import inclusion_flow, load_tables
 from blindside.data.paths import cache_dir
-from blindside.data.tracking import tracking_match_ids
-from blindside.features.engagements import POSSESSION_LABELS, PRIMARY_OUTCOME, pose_available
-from blindside.features.orientation_table import OrientationConfig, orientation_cache_path
+from blindside.features.engagements import POSSESSION_LABELS, PRIMARY_OUTCOME
 from blindside.features.xy_baseline import (
     CATEGORICAL_FEATURES,
     NUMERIC_FEATURES,
-    baseline_table,
 )
 
 DOC = Path("docs/BASELINE.md")
@@ -60,45 +56,6 @@ def _md_table(frame: pd.DataFrame, decimals: dict[str, int] | None = None, defau
     rule = "|" + "---|" * len(out.columns)
     rows = ["| " + " | ".join(str(v) for v in row) + " |" for row in out.itertuples(index=False)]
     return "\n".join([header, rule, *rows])
-
-
-def load_tables() -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Engagement tables of the training matches and of the pose matches, before inclusion."""
-    pose_ids = set(pose_match_ids())
-    train, test = [], []
-    for match_id in tracking_match_ids():
-        table = baseline_table(match_id)
-        if match_id in pose_ids:
-            archive = download_pose_archive(match_id)
-            keys = pd.read_parquet(
-                orientation_cache_path(archive, OrientationConfig()), columns=["frame", "player_id"]
-            )
-            table["has_pose"] = pose_available(table, keys)
-            test.append(table)
-        else:
-            train.append(table)
-    return pd.concat(train, ignore_index=True), pd.concat(test, ignore_index=True)
-
-
-def inclusion_flow(table: pd.DataFrame, with_pose: bool) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Apply the inclusion criteria in order. Returns the included rows and the flow table."""
-    steps = [("All on-ball engagements", np.ones(len(table), dtype=bool))]
-    if with_pose:
-        steps.append(("1. Pose for presser and carrier at t0", table["has_pose"].to_numpy()))
-    steps.append(("2. Primary outcome defined", table[PRIMARY_OUTCOME].notna().to_numpy()))
-    steps.append(("3. Tracking at t0 and 0.5 s before", table["has_tracking"].to_numpy()))
-    keep = np.ones(len(table), dtype=bool)
-    rows = []
-    for label, mask in steps:
-        keep &= mask
-        rows.append(
-            {
-                "Criterion": label,
-                "Engagements": int(keep.sum()),
-                "Possessions": int(table.loc[keep, "cluster"].nunique()),
-            }
-        )
-    return table[keep].reset_index(drop=True), pd.DataFrame(rows)
 
 
 def calibration(y: np.ndarray, p: np.ndarray) -> tuple[float, float]:

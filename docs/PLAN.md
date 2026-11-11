@@ -10,7 +10,7 @@ Budget assumption: 8 to 10 hours per week, about 45 to 50 hours in total.
 | 2 Reliability map | 23 to 29 Nov | 8 | Passed on 10 Nov: composite figure `docs/figures/reliability_composite.png`, findings in docs/RELIABILITY.md section 3 |
 | 3 Engagements and baseline | 30 Nov to 6 Dec | 10 | Passed on 10 Nov: pre-registration committed (fe7ad6e), XY baseline scored (docs/BASELINE.md) |
 | 4 Incremental value | 7 to 11 Dec | 6 | Passed on 11 Nov: no detectable increment, log loss difference minus 0.0002 under both bounds, 95% intervals within minus 0.0004 to 0.0000 (docs/INCREMENTAL.md) |
-| 5 Packaging | 12 to 16 Dec | 8 | Clean-clone run passes, README and video done |
+| 5 Packaging | 12 to 16 Dec | 8 | Engineering passed on 11 Nov: clean-clone run reproduces both README figures byte-identically, README drafted. Video and submission open (manual tasks) |
 | Buffer | 17 to 18 Dec | 0 | Submit on 17 Dec |
 
 Cut rule: if phase 0 or phase 3 shows too few usable engagements, drop phase 4 and submit deliverables 1 and 2
@@ -230,6 +230,21 @@ Add LICENSE.md (MIT). Add a GitHub Actions workflow that runs tests and the fast
 Then run a clean-clone test in a fresh directory on a machine state without caches and fix everything that breaks.
 ```
 
-Manual tasks for Moritz: record the one-minute video (script: problem 10 s, pose against XY by carrier speed 20 s,
+Status: engineering done on 11 Nov, manual tasks open.
+- Decisions by Moritz on 11 Nov: `reproduce --fast` writes stamped stand-ins to `outputs/fast/` (the reliability composite on the
+  sample and a geometry panel of its two engagements). The full `reproduce` draws both figures from the two pose matches,
+  `--with-test` adds the baseline on 18 matches and the pre-registered comparison.
+- A clean clone has no `../opendata`: events, match metadata and the sample phase are now downloaded at the pinned commit and
+  verified by sha256 (`blindside.data.opendata`). Without this the package did not run out of the box.
+- `load_tables`, `inclusion_flow`, `attach_pose`, `compute` and `proxy_agreement` moved to `blindside.analysis.pipeline`.
+  Rerunning the three doc scripts afterwards left `docs/` byte-identical.
+- Clean-clone test (fresh directory, no opendata clone, no data, fresh uv cache, macOS): 222 tests pass and 5 skip (they need
+  cached full-match tables or a local sample), `reproduce --fast` takes 50 s including a 97 MB download, `reproduce` takes
+  13 minutes including 1.4 GB of downloads (orientation tables 107 and 110 s). Both figures are byte-identical to the committed ones.
+  `reproduce --with-test` on the cached data takes 170 s and prints minus 0.0002 (minus 0.0004 to 0.0000) under both bounds.
+- README: 900 words by the conservative count of `scripts/check_readme.py`, two figures, no table.
+- Not yet verified: the GitHub Actions workflow has not run, the branch is not pushed.
+
+Manual tasks for Moritz: review the README draft, add the video link to it, record the one-minute video (script: problem 10 s, pose against XY by carrier speed 20 s,
 the null result and its resolution 15 s, rerun and reuse 15 s), upload to YouTube,
 make the repo public, submit on Pretalx on 17 Dec.
