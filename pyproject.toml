@@ -16,6 +16,9 @@ dependencies = [
     "scikit-learn>=1.4",
 ]
 
+[project.scripts]
+blindside = "blindside.cli:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8",

@@ -200,7 +200,8 @@ def download_pose_archive(
     )
 
 
-def _print_progress(label: str) -> ProgressCallback:
+def print_progress(label: str) -> ProgressCallback:
+    """Progress callback that prints a line for every tenth of the download."""
     state = {"next": 0.0}
 
     def report(done: int, total: int) -> None:
@@ -222,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
     for match_id in args.match or pose_match_ids():
         try:
             path = download_pose_archive(
-                match_id, args.dest_dir, progress=_print_progress(str(match_id))
+                match_id, args.dest_dir, progress=print_progress(str(match_id))
             )
         except (DownloadError, ValueError) as error:
             print(f"error: {error}", file=sys.stderr)

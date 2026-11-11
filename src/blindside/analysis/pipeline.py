@@ -55,7 +55,7 @@ from blindside.data.download import download_pose_archive
 from blindside.data.events import load_match_metadata
 from blindside.data.manifest import pose_match_ids
 from blindside.data.paths import cache_dir
-from blindside.data.tracking import tracking_match_ids
+from blindside.data.tracking import PositionGrid, tracking_match_ids
 from blindside.features.engagements import POSSESSION_LABELS, PRIMARY_OUTCOME, pose_available
 from blindside.features.orientation_table import (
     OrientationConfig,
@@ -72,6 +72,7 @@ from blindside.features.pose_features import (
 )
 from blindside.features.xy_baseline import (
     CATEGORICAL_FEATURES,
+    LOOKBACK_FRAMES,
     NUMERIC_FEATURES,
     baseline_table,
     design_frame,
@@ -255,6 +256,51 @@ def logistic_logit(
     keep = train[outcome].notna()
     model, _ = tune_and_fit(train[keep], outcome, categorical=categorical)
     return logit(predict_probability(model, test, categorical=categorical))
+
+
+def engagement_geometry(
+    engagements: pd.DataFrame,
+    poses: pd.DataFrame,
+    features: Mapping[str, pd.DataFrame],
+    grid: PositionGrid,
+) -> pd.DataFrame:
+    """What both blind-side labels see of each engagement, for a drawing from above.
+
+    Parameters
+    ----------
+    engagements
+        Engagements of one match with ``pose_frame``, ``frame_start``, ``presser_id``,
+        ``carrier_id``, ``carrier_speed`` and ``approach_angle_heading_deg``.
+    poses
+        Joints in those frames, see :func:`blindside.features.pose_features.read_engagement_poses`.
+    features
+        ``{bound: pose_feature_table(...)}`` for ``"lower"`` and ``"upper"``.
+    grid
+        Tracking positions of the match, for the carrier's direction of travel.
+
+    Returns
+    -------
+    One row per engagement with the columns that
+    :func:`blindside.viz.agreement.plot_engagement_geometry` reads, except ``time_s``.
+    """
+    index = poses.set_index(["frame", "player_id"])
+    frames = engagements["pose_frame"].to_numpy()
+    out = pd.DataFrame(index=engagements.index)
+    for player in ("carrier", "presser"):
+        rows = index.reindex(pd.MultiIndex.from_arrays([frames, engagements[f"{player}_id"]]))
+        out[f"{player}_x"], out[f"{player}_y"] = rows["x"].to_numpy(), rows["y"].to_numpy()
+    t0 = engagements["frame_start"].to_numpy(dtype=np.int64)
+    carrier = engagements["carrier_id"].to_numpy(dtype=np.int64)
+    step = grid.at(t0, carrier) - grid.at(t0 - LOOKBACK_FRAMES, carrier)
+    out["travel_dx"], out["travel_dy"] = step[:, 0], step[:, 1]
+    for name in ("carrier_speed", "approach_angle_heading_deg"):
+        out[name] = engagements[name].to_numpy(dtype=float)
+    for segment in ("head", "torso"):
+        out[f"{segment}_deg"] = features["upper"][f"carrier_{segment}_deg"]
+        for bound in BOUNDS:
+            out[f"{segment}_sd_{bound}_deg"] = features[bound][f"carrier_{segment}_sd_deg"]
+            out[f"p_{segment}_{bound}"] = features[bound][f"p_blind_side_{segment}"]
+    return out
 
 
 # --------------------------------------------------------------------------------------

@@ -183,3 +183,6 @@ cython_debug/
 # data files (root only, so that src/blindside/data/ stays tracked)
 /data/
 .DS_Store
+
+# figures of `blindside reproduce --fast`
+/outputs/
