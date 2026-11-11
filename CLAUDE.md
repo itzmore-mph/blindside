@@ -106,6 +106,9 @@ Consequences for how we build:
   Several engagements can target the same possession. Always cluster by possession.
 - 57% of on-ball engagements start before the pressed possession starts (median 0.2 s): the carrier is then still a receiver.
 - Primary outcome (docs/PREREGISTRATION.md): possession loss of the pressed possession. 217 events in 1,875 included test engagements.
+- Phase 4 result (docs/INCREMENTAL.md): no detectable increment of the four pose features over the XY baseline, under both
+  uncertainty bounds (log loss difference minus 0.0002, 95% intervals within minus 0.0004 to 0.0000). Possession loss is 13.2% in the blind bin
+  of `p_blind_side_head` against 10.8% in view (lower bound), plus 2.4 points (minus 1.2 to plus 5.8). Deliverable 3 is implemented, not validated.
 
 ## Method conventions
 
@@ -164,6 +167,7 @@ docs/
   FEASIBILITY.md
   RELIABILITY.md
   BASELINE.md
+  INCREMENTAL.md
 notebooks/     # optional walkthrough, not part of the judged submission
 README.md      # the judged document: max 1000 words, max two figures or tables
 LICENSE.md

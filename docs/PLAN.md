@@ -9,7 +9,7 @@ Budget assumption: 8 to 10 hours per week, about 45 to 50 hours in total.
 | 1 Orientation and uncertainty | 16 to 22 Nov | 10 | Passed on 10 Nov: 100 tests green, velocity check plotted (docs/FEASIBILITY.md section 9) |
 | 2 Reliability map | 23 to 29 Nov | 8 | Passed on 10 Nov: composite figure `docs/figures/reliability_composite.png`, findings in docs/RELIABILITY.md section 3 |
 | 3 Engagements and baseline | 30 Nov to 6 Dec | 10 | Passed on 10 Nov: pre-registration committed (fe7ad6e), XY baseline scored (docs/BASELINE.md) |
-| 4 Incremental value | 7 to 11 Dec | 6 | Result with confidence intervals, whatever it shows |
+| 4 Incremental value | 7 to 11 Dec | 6 | Passed on 11 Nov: no detectable increment, log loss difference minus 0.0002 under both bounds, 95% intervals within minus 0.0004 to 0.0000 (docs/INCREMENTAL.md) |
 | 5 Packaging | 12 to 16 Dec | 8 | Clean-clone run passes, README and video done |
 | Buffer | 17 to 18 Dec | 0 | Submit on 17 Dec |
 
@@ -175,6 +175,21 @@ Anything beyond the pre-registration goes into a clearly labelled exploratory se
 ```
 
 Gate: one honest headline sentence, supported by the interval. A null result is acceptable and is reported as such.
+
+Status: done on 11 Nov. Null result, reported as pre-registered. Model 1 (baseline plus four pose features) does not beat Model 0
+(recalibrated baseline) under either uncertainty bound: log loss difference minus 0.0002 (95% intervals within minus 0.0004 to 0.0000).
+None of the ten robustness checks and neither binary secondary outcome shows an increment. Descriptively, possession loss is
+13.2% in the blind bin of `p_blind_side_head` against 10.8% in the in-view bin (lower bound), plus 2.4 points (minus 1.2 to plus 5.8),
+and plus 1.1 (minus 2.2 to plus 4.4) after the XY baseline. Three additions to the pre-registration were committed on 11 Nov
+before any pose feature was computed (section 12). Deliverable 3 is implemented and geometrically verified, not validated
+as an explanatory variable. Reproduce with `uv run python scripts/incremental_value.py --write-docs`.
+
+Open points carried into Phase 5:
+- README figure 2 is not drawn yet. Candidate: possession loss per bin of `p_blind_side_head`, observed against expected
+  under Model 0, both bounds (docs/INCREMENTAL.md section 1.6).
+- The README has to lead with the football question and report the null result plainly. The reliability work is what makes it credible.
+- `load_tables` and `inclusion_flow` live in `scripts/xy_baseline.py` and are imported by `scripts/incremental_value.py`.
+  Move them into the package when the CLI is built.
 
 ## Phase 5: Packaging
 
