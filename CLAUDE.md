@@ -27,9 +27,18 @@ and does it add explanatory value beyond XY tracking?
    presser approaches from outside the ball carrier's visual field. Test whether this adds explanatory
    value over an XY-only baseline for a pre-registered outcome.
 
-Framing for the submission: the football question leads, the reliability work is the method that makes the answer trustworthy.
-Headline: "Pressure the ball carrier cannot see: measuring blind-side pressing from broadcast body pose, with honest uncertainty."
+Framing for the submission (updated 11 November 2026, after Phase 4): the football question leads, the reliability work is
+the method that makes the answer trustworthy. The submission
+1. leads with **who counts as pressed from the blind side**: the pose label against the XY proxy (presser more than 100 degrees
+   off the carrier's direction of travel), by carrier speed. XY alone calls 45.5% of engagements blind, head pose 20.5%,
+   and the two agree beyond chance only when the carrier runs (docs/INCREMENTAL.md section 1.10).
+2. states the pre-registered null plainly, with its interval and its resolution: no detectable increment for possession loss,
+   and an effect up to an odds ratio of about 1.5 per standard deviation could not have been told from zero with 217 events.
+3. presents the frozen design (pre-registration, baseline, features, script) as ready to rerun unchanged on more matches.
+
+Headline: "Who is pressed from the blind side? Broadcast body pose against the XY proxy, with honest uncertainty."
 Deliverables 1 and 2 are the methodological backbone and the reusable package. Deliverable 3 is what a coach cares about.
+Never write that blind-side pressure causes or predicts possession loss. The test found no increment.
 
 If the sample is too small for the incremental value test, keep deliverable 3 as a descriptive metric with uncertainty
 and state clearly that it is implemented but not validated.
@@ -54,6 +63,9 @@ Judging, 20% each: Relevance, Methodology, Originality, Communication, Open-sour
 
 Consequences for how we build:
 - The README is the submission. Every analysis must earn a place in 1000 words and two figures. Everything else goes to `docs/`.
+- README figure 1: the reliability composite (candidate, `docs/figures/reliability_composite.png`).
+  README figure 2: Cohen's kappa of the XY proxy against the pose label by carrier speed band, plus the share of engagements called blind by each label (pose head, pose torso, XY proxy). No outcome in it.
+  It replaces the earlier candidate, possession loss per bin of `p_blind_side`.
 - One command reproduces both README figures from a clean clone: `uv run blindside reproduce`.
   A fast path on the committed sample phase must finish in under five minutes. The full path downloads and caches the pose files.
 - The package must be installable and reusable on its own (`pip install .`), with a documented public API,
@@ -106,6 +118,22 @@ Consequences for how we build:
   Several engagements can target the same possession. Always cluster by possession.
 - 57% of on-ball engagements start before the pressed possession starts (median 0.2 s): the carrier is then still a receiver.
 - Primary outcome (docs/PREREGISTRATION.md): possession loss of the pressed possession. 217 events in 1,875 included test engagements.
+- Phase 4 result (docs/INCREMENTAL.md): no detectable increment of the four pose features over the XY baseline, under both
+  uncertainty bounds (log loss difference minus 0.0002, 95% intervals within minus 0.0004 to 0.0000). Possession loss is 13.2% in the blind bin
+  of `p_blind_side_head` against 10.8% in view (lower bound), plus 2.4 points (minus 1.2 to plus 5.8). Deliverable 3 is implemented, not validated.
+- Resolution of the Phase 4 test (exploratory, docs/INCREMENTAL.md section 1.9): the unpenalised coefficient of `p_blind_side_head` is
+  plus 0.11 per standard deviation (minus 0.18 to plus 0.39, odds ratio 0.84 to 1.47, lower bound). Without a penalty the pose features
+  make the out-of-sample log loss worse by 0.002, so the null is not produced by the shrinkage.
+- XY proxy against the pose label (exploratory, no outcome used, docs/INCREMENTAL.md section 1.10). Proxy: `approach_angle_heading_deg`
+  above 100 degrees. Pose label: `p_blind_side` above 0.5. Head: agreement 65.8% (63.5 to 68.0), Cohen's kappa 0.28 (0.24 to 0.31).
+  Torso: kappa 0.35 (0.31 to 0.39). The proxy calls 45.5% of engagements blind, head pose 20.5%, torso pose 23.2%.
+  Recall 77%, precision 35% (head).
+- Kappa by carrier speed, head label: 0.09 below 2 m/s (665 engagements), 0.31 at 2 to 4 (727), 0.54 at 4 to 6 (370),
+  0.58 above 6 m/s (113). Torso label: 0.10, 0.41, 0.66, 0.77. Below 2 m/s the proxy is close to chance, and 35% of engagements are there.
+- A label cut at `p_blind_side` 0.5 is almost the point estimate: both bounds give the same agreement table to within 0.2 points.
+  The bounds matter for who lands in the uncertain bin (56 engagements under the lower bound, 342 under the upper, head), not for this cut.
+- Low agreement cannot say which label is right. Without ground truth, "pose carries orientation that XY lacks" and "one label is noisy"
+  are not separable. Say so wherever kappa is shown.
 
 ## Method conventions
 
@@ -164,6 +192,7 @@ docs/
   FEASIBILITY.md
   RELIABILITY.md
   BASELINE.md
+  INCREMENTAL.md
 notebooks/     # optional walkthrough, not part of the judged submission
 README.md      # the judged document: max 1000 words, max two figures or tables
 LICENSE.md
