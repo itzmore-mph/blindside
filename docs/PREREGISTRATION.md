@@ -271,3 +271,28 @@ Clarification of section 6, same date, same state of knowledge.
    label-independent forward cue, which indicates swapped left and right labels. For `p_blind_side` and the other pose features the
    angles are used as they are. No pose is corrected and no engagement is excluded because of the flag. The number of included
    engagements with a flagged carrier pose is reported, for the head and for the torso.
+
+Clarifications of wording, recorded on 11 November 2026 while implementing the pose features and the comparison,
+before any pose feature was computed. None of them changes a feature set, the outcome, the model class, the metric or the resampling.
+
+7. **Pose frame (section 6).** If two pose frames with joints for both players are equally near to `2.5 * frame_start`,
+   the earlier one is taken. It uses no information after t0.
+8. **Positions (section 6).** The direction from the carrier to the presser uses the `x`, `y` positions stored in the pose file
+   for the selected pose frame, so that position and orientation come from the same instant. The XY baseline keeps using the 10 fps tracking.
+9. **Monte Carlo draws (section 6).** The joint pair of each segment is sampled as in `blindside.geometry.uncertainty`, with the
+   left/right correlation of the bound. Both bounds use the same seed 0 and therefore the same standard normal draws,
+   scaled by the sigma of the bound. The head direction is the ear axis (`head` segment).
+10. **`presser_alignment` (section 6).** Implemented as written: the absolute angle lies in 0 to 180 degrees and its
+    circular mean over the draws is taken. `carrier_openness` uses the direction in which the carrier's team attacks
+    (the opposite of the engagement row's `attacking_side`, which is the pressing team's).
+11. **Model 1 (section 7).** Intercept and the coefficient of `z_xy` are not penalised. The four pose features are standardised with
+    the statistics of the training fold. The penalty is chosen from the ten values of clarification 2 by 5-fold cross-validation
+    inside the training fold, groups = possessions, stratified by match, by log loss. A missing pose feature is imputed with the
+    training median. Model 0 is not penalised.
+12. **Subgroup checks (section 10, checks 6 and 10).** Both reuse the out-of-fold predictions of the primary comparison and compute
+    the metric difference per group. Check 2 (usability subset) refits both models on the subset. Check 5 changes the upper bound only:
+    the lower bound is tied to the measured jitter and does not depend on the sigma factor. Check 8 uses the carrier's distance.
+    Checks 3, 7 and 9 refit the baseline on the 18 training matches and then repeat the comparison.
+13. **Secondary outcomes (section 4).** Wide turnover and `force_backward` get the same procedure as the primary outcome, each with
+    its own baseline fitted on the 18 training matches. For `possession_epv_total` no model was registered. It is reported as its mean
+    per bin of `p_blind_side` with cluster bootstrap intervals.
