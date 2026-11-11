@@ -14,12 +14,11 @@ import argparse
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
-from blindside.analysis.bracket import PRIMARY_WINDOW, add_residuals, bracket_summary
-from blindside.analysis.camera import cached_camera_estimate
-from blindside.analysis.consistency import SEGMENTS, SPEED_EDGES, USABLE_SD_DEG
+from blindside.analysis.bracket import PRIMARY_WINDOW, bracket_summary
+from blindside.analysis.consistency import SEGMENTS, USABLE_SD_DEG
+from blindside.analysis.pipeline import pose_match_orientation_tables, reliability_inputs
 from blindside.analysis.reliability import (
     GROSS_MISALIGNMENT_M,
     MIN_ZONE_POSES,
@@ -28,15 +27,10 @@ from blindside.analysis.reliability import (
     USABLE_THRESHOLDS,
     ZONE_BINS,
     misalignment_summary,
-    pitch_zone_summary,
-    standard_xy,
-    touchline_distance,
     usability_sensitivity,
     usability_share,
-    velocity_agreement_by_band,
 )
 from blindside.data.download import download_pose_archive
-from blindside.data.events import load_match_metadata
 from blindside.data.manifest import pose_match_ids
 from blindside.features.orientation_table import (
     OrientationConfig,
@@ -302,30 +296,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-figures", action="store_true")
     args = parser.parse_args(argv)
 
-    tables, pitch_dims, sides = [], {}, set()
-    for match_id in pose_match_ids():
-        archive = download_pose_archive(match_id)
-        table = cached_orientation_table(archive, match_id, OrientationConfig())
-        metadata = load_match_metadata(match_id)
-        pitch_dims[match_id] = (float(metadata["pitch_length"]), float(metadata["pitch_width"]))
-        camera = cached_camera_estimate(archive, match_id)
-        if not camera.reliable:
-            raise SystemExit(f"camera side of match {match_id} could not be inferred reliably")
-        sides.add(camera.side)
-        table["touchline_distance"] = touchline_distance(
-            table["y"].to_numpy(), pitch_dims[match_id][1], camera.side
-        ).astype(np.float32)
-        tables.append(table)
-    if len(sides) != 1:
-        raise SystemExit("the camera side differs between matches, zones cannot be pooled as is")
-    camera_side = sides.pop()
-
-    table = pd.concat(tables, ignore_index=True)
-    del tables
-    with_residuals = add_residuals(table)
-    x, y = standard_xy(with_residuals, pitch_dims)
-    zones = pitch_zone_summary(with_residuals, x, y)
-    velocity = velocity_agreement_by_band(table)
+    try:
+        table, pitch_dims, camera_side = pose_match_orientation_tables()
+    except RuntimeError as error:
+        raise SystemExit(str(error)) from error
+    inputs = reliability_inputs(table, pitch_dims)
+    with_residuals, zones, velocity = inputs.with_residuals, inputs.zones, inputs.velocity
     sensitivity = usability_sensitivity(sensitivity_tables(), USABLE_THRESHOLDS)
 
     markdown = render(table, with_residuals, zones, velocity, sensitivity, pitch_dims)
@@ -335,9 +311,7 @@ def main(argv: list[str] | None = None) -> int:
         FIGURES.mkdir(parents=True, exist_ok=True)
         figures = {
             COMPOSITE: plot_reliability_composite(
-                bracket_summary(with_residuals, "speed", SPEED_EDGES),
-                zones,
-                velocity,
+                **inputs.composite(),
                 camera_side=camera_side,
                 caption=(
                     f"Reliability of pose-derived orientation, {len(table):,} poses from "
