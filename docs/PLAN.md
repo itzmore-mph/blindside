@@ -184,10 +184,20 @@ and plus 1.1 (minus 2.2 to plus 4.4) after the XY baseline. Three additions to t
 before any pose feature was computed (section 12). Deliverable 3 is implemented and geometrically verified, not validated
 as an explanatory variable. Reproduce with `uv run python scripts/incremental_value.py --write-docs`.
 
+Exploratory addition on 11 Nov, no outcome used (docs/INCREMENTAL.md section 1.10): the XY proxy for the blind side
+(presser more than 100 degrees off the carrier's direction of travel) against the pose label (`p_blind_side` above 0.5).
+The proxy calls 45.5% of engagements blind, head pose 20.5%. Cohen's kappa is 0.28 (0.24 to 0.31) overall and rises with
+carrier speed from 0.09 below 2 m/s to 0.58 above 6 m/s (torso label: 0.10 to 0.77). This became the lead of the submission.
+
 Open points carried into Phase 5:
-- README figure 2 is not drawn yet. Candidate: possession loss per bin of `p_blind_side_head`, observed against expected
-  under Model 0, both bounds (docs/INCREMENTAL.md section 1.6).
-- The README has to lead with the football question and report the null result plainly. The reliability work is what makes it credible.
+- README figure 2 is not drawn yet. Decided on 11 Nov: Cohen's kappa of the XY proxy against the pose label by carrier speed
+  band, plus the share of engagements called blind by each label (docs/INCREMENTAL.md section 1.10). It replaces the earlier
+  candidate, possession loss per bin of `p_blind_side_head` (section 1.6), which stays in docs/.
+- The README leads with who counts as pressed from the blind side (pose against the XY proxy, by carrier speed), reports the
+  pre-registered null plainly with its interval and resolution, and presents the frozen design as ready to rerun on more matches.
+  The reliability work is what makes it credible.
+- Figure 2 needs the engagements of both pose matches. The fast path runs on one sample phase of 12.3 s and cannot compute it.
+  Open decision for Phase 5: what `blindside reproduce --fast` draws for figure 2. No derived data table may be committed.
 - `load_tables` and `inclusion_flow` live in `scripts/xy_baseline.py` and are imported by `scripts/incremental_value.py`.
   Move them into the package when the CLI is built.
 
@@ -197,14 +207,29 @@ Open points carried into Phase 5:
 Read CLAUDE.md. Implement the CLI: `blindside reproduce --fast` (sample phase, under five minutes) and `blindside reproduce`
 (full download with cache and progress, checksum verification, clear error messages on network failure). Both regenerate the two README figures.
 
-Draft README.md: at most 1000 words, exactly two figures. Structure mapped to the judging criteria:
-the defensive question and who it helps, method in plain language, the headline result with its confidence interval,
-limitations, how to reproduce, how to reuse the package (10-line example), third-party libraries and licences.
+Draw README figure 2 with the style module, from `blindside.analysis.agreement.agreement_table` (docs/INCREMENTAL.md section 1.10):
+left panel Cohen's kappa of the XY proxy against the pose label per carrier speed band, head and torso, with the cluster
+bootstrap intervals. Right panel the share of engagements called blind by each label (pose head, pose torso, XY proxy)
+per speed band. No outcome column in the figure. Figure 1 is the reliability composite (candidate). Before building the fast path,
+ask Moritz what it draws for figure 2: the sample phase cannot compute it (docs/PLAN.md, open points of Phase 4).
+
+Draft README.md: at most 1000 words, exactly two figures. Structure mapped to the judging criteria, in this order:
+1. The defensive question and who it helps: who counts as pressed from the blind side. XY tracking alone calls about twice
+   as many engagements blind as body pose does, and agrees with pose beyond chance only when the carrier runs.
+2. Method in plain language: orientation with an uncertainty bracket, the reliability map, `p_blind_side` under both bounds.
+3. The pre-registered test, stated plainly as a null result: log loss difference with its interval, and the resolution
+   (what effect size 217 events could not have told from zero). No wording that suggests blind-side pressure predicts
+   possession loss. Kappa is agreement, not accuracy: say that it cannot tell which label is right.
+4. The frozen design as the reusable result: pre-registration, baseline, features and one script, ready to rerun unchanged
+   when more matches with body pose are published.
+5. Limitations, how to reproduce, how to reuse the package (10-line example), third-party libraries and licences.
+Take every number from docs/INCREMENTAL.md and CLAUDE.md. Label section 1.10 results as exploratory.
 Add a word-count check to CI that fails above 1000 words or more than two figures or tables.
 Add LICENSE.md (MIT). Add a GitHub Actions workflow that runs tests and the fast path on a clean runner.
 
 Then run a clean-clone test in a fresh directory on a machine state without caches and fix everything that breaks.
 ```
 
-Manual tasks for Moritz: record the one-minute video (script: problem 10 s, idea 15 s, result 20 s, reuse 15 s), upload to YouTube,
+Manual tasks for Moritz: record the one-minute video (script: problem 10 s, pose against XY by carrier speed 20 s,
+the null result and its resolution 15 s, rerun and reuse 15 s), upload to YouTube,
 make the repo public, submit on Pretalx on 17 Dec.

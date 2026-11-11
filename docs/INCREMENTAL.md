@@ -401,6 +401,10 @@ Status of deliverable 3, in the terms of CLAUDE.md:
 - The headline sentence above, with its interval.
 - `data/cache/pose_features/engagement_features.parquet` (git ignored): the included engagements with the pose features under
   both bounds and the out-of-fold predictions of both models.
-- A candidate for README figure 2: possession loss per bin of `p_blind_side_head` under both bounds, observed against expected
-  under Model 0 (the tables of 1.6). Not drawn yet.
-- `blindside.features.pose_features.pose_feature_table` and `blindside.analysis.incremental` as public API.
+- README figure 2 (decided on 11 November 2026, not drawn yet): Cohen's kappa of the XY proxy against the pose label by carrier
+  speed band, plus the share of engagements called blind by each label (the tables of 1.10). It replaces the earlier candidate,
+  possession loss per bin of `p_blind_side_head` (the tables of 1.6).
+- The lead of the submission: who counts as pressed from the blind side, pose against the XY proxy by carrier speed (1.10),
+  then the null result with its interval and resolution, then the frozen design as ready to rerun on more matches.
+- `blindside.features.pose_features.pose_feature_table`, `blindside.analysis.incremental` and
+  `blindside.analysis.agreement` as public API.
