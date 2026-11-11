@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests and fast path (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install from the lock file
+        run: uv sync --locked
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: README limits (1000 words, two figures or tables)
+        run: uv run python scripts/check_readme.py
+      - name: Tests
+        run: uv run pytest
+      # A clean runner has no data and no opendata clone: everything is downloaded here.
+      - name: Fast path on the sample phase, under five minutes
+        timeout-minutes: 5
+        run: uv run blindside reproduce --fast
+      - uses: actions/upload-artifact@v7
+        with:
+          name: fast-path-figures-py${{ matrix.python-version }}
+          path: outputs/fast/*.png
+          if-no-files-found: error
+
+  install:
+    name: pip install . without uv
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install .
+      - name: The package imports and the command exists outside the repository
+        working-directory: ${{ runner.temp }}
+        run: |
+          blindside --version
+          blindside reproduce --help
+          python -c "import blindside; print(sorted(blindside.__all__))"
