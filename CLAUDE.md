@@ -64,10 +64,14 @@ Judging, 20% each: Relevance, Methodology, Originality, Communication, Open-sour
 Consequences for how we build:
 - The README is the submission. Every analysis must earn a place in 1000 words and two figures. Everything else goes to `docs/`.
 - README figure 1: the reliability composite (candidate, `docs/figures/reliability_composite.png`).
-  README figure 2: Cohen's kappa of the XY proxy against the pose label by carrier speed band, plus the share of engagements called blind by each label (pose head, pose torso, XY proxy). No outcome in it.
+  README figure 2 (`docs/figures/proxy_agreement.png`): Cohen's kappa of the XY proxy against the pose label by carrier speed band, plus the share of engagements called blind by each label (pose head, pose torso, XY proxy). No outcome in it.
   It replaces the earlier candidate, possession loss per bin of `p_blind_side`.
-- One command reproduces both README figures from a clean clone: `uv run blindside reproduce`.
-  A fast path on the committed sample phase must finish in under five minutes. The full path downloads and caches the pose files.
+- One command reproduces both README figures from a clean clone: `uv run blindside reproduce`. It needs the two pose matches only
+  (1.4 GB download). `--with-test` also refits the baseline on the other 18 matches and reruns the pre-registered comparison.
+- `uv run blindside reproduce --fast` runs on the sample phase and must finish in under five minutes. The sample holds two engagements,
+  so it cannot compute figure 2. Decided by Moritz on 11 November 2026: the fast path writes stamped stand-ins to `outputs/fast/`
+  (git ignored), the reliability composite on the sample and a geometry panel of the two engagements, and never touches `docs/figures/`.
+- `README.md` limits are enforced by `scripts/check_readme.py` (conservative count: every whitespace-separated token) in the tests and in CI.
 - The package must be installable and reusable on its own (`pip install .`), with a documented public API,
   because the winner's grant funds conversion into a package or a pull request to an existing library.
 - Do not commit data or derived data tables.
@@ -81,6 +85,9 @@ Consequences for how we build:
   Our copy with a pinned Hugging Face revision is `src/blindside/data/pose_manifest.json`. Downloads go to `data/raw/bodypose/` (git ignored).
 - One sample phase committed **in the opendata repo, not in ours**: `data/bodypose/sample_1925299_phase406.jsonl.gz` (309 pose frames, 12.3 s, 1.8 MB).
 - Local reference clone of opendata: `../opendata` (commit 4340d27, LFS tracking files not pulled). Override with `BLINDSIDE_OPENDATA_DIR`.
+  A clean clone has no such directory: events, match metadata and the sample phase are then downloaded from `raw.githubusercontent.com`
+  at commit 4340d27 into `data/raw/opendata/` and verified against `src/blindside/data/opendata_manifest.json`
+  (`blindside.data.opendata.opendata_file`). An explicit `BLINDSIDE_OPENDATA_DIR` is never filled by a download.
 - Tracking is downloaded by `python -m blindside.data.tracking` from the GitHub LFS media endpoint at commit 4340d27 into
   `data/raw/tracking/` (20 files, 1.8 GB, sha256 from `src/blindside/data/tracking_manifest.json`). `git-lfs` is not needed.
 - Verified findings from the data: `docs/FEASIBILITY.md`. Read it before writing loaders.
@@ -182,9 +189,11 @@ src/blindside/
   data/        # download, caching, loaders for tracking, events, pose
   geometry/    # orientation, circular stats, error propagation
   features/    # engagement extraction, XY baseline features, pose features
-  analysis/    # reliability map, incremental value test
+  analysis/    # reliability map, incremental value test, pipeline.py (the steps shared by scripts and CLI)
   viz/         # plotting helpers
-  cli.py       # `blindside reproduce [--fast]`
+  cli.py       # `blindside reproduce [--fast | --with-test]`
+scripts/       # write the generated blocks of docs/*.md, check_readme.py
+.github/workflows/ci.yml  # lint, tests, README limits, fast path on a clean runner
 tests/
 docs/
   PLAN.md

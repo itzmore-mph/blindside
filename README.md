@@ -84,8 +84,8 @@ SkillCorner's open data ([GitHub](https://github.com/SkillCorner/opendata),
 
 ```
 uv sync
-uv run blindside reproduce --fast        # sample phase, RUNTIME_FAST, 100 MB
-uv run blindside reproduce               # both figures, RUNTIME_FULL, 1.4 GB
+uv run blindside reproduce --fast        # sample phase, about 1 minute, 100 MB
+uv run blindside reproduce               # both figures, about 13 minutes, 1.4 GB
 uv run blindside reproduce --with-test   # plus the pre-registered test, 3 GB
 uv run pytest
 ```
