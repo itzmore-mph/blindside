@@ -239,3 +239,35 @@ None of them changes a feature set, the outcome, the model class, the metric or 
 
 Observation after the baseline was fitted (docs/BASELINE.md section 2): `team_out_of_possession_phase_type` may be assigned
 with hindsight by the data provider. It stays in the baseline as registered. If it leaks, it favours the baseline.
+
+Additions of 11 November 2026, recorded before Phase 4 started. **No pose feature has been computed for any engagement at this point**
+and no outcome has been set against a pose quantity. Sections 1 to 11 stay as they are. The primary comparison, its metric,
+its resampling and its decision rule are unchanged. Each addition is reported next to the primary result, whatever it shows,
+and none can replace it.
+
+What was known when they were written: the baseline results of docs/BASELINE.md, which hold outcomes and XY features and no pose.
+Addition 2 was motivated by the baseline coefficients in docs/BASELINE.md section 1.6, where the levels `chaotic` and `disruption` of
+`team_out_of_possession_phase_type` are among the largest. It is therefore not blind to the outcome on the XY side. Additions 1 and 3
+were not prompted by a result.
+
+1. **Addition to section 11 (descriptive analysis for H2).** For each bin of `p_blind_side_head` and of `p_blind_side_torso`, the table
+   also reports the observed rate of the primary outcome minus the rate expected under Model 0, that is the mean of the
+   out-of-fold Model 0 predictions (section 9) of the engagements in the bin. Cluster bootstrap 95% intervals as in section 9,
+   under both bounds. The bin edges and the rule for bins below 50 engagements are those of section 11.
+   Purpose: a raw rate difference between bins can come from XY context alone. This shows what is left after the baseline.
+2. **Robustness check 9 (added to section 10).** The primary comparison with a baseline that drops
+   `team_out_of_possession_phase_type`, `overall_pressure_start` and `reception_difficulty_start`. The baseline is refitted on the
+   18 training matches with the tuning procedure of section 7. Reason: the phase type may be assigned with hindsight
+   (observation above), and the two labels are the timing exception of section 5. This is the baseline with no suspected leak.
+3. **Robustness check 10 (added to section 10).** The primary comparison split by the carrier's speed at t0, below 2 m/s versus
+   at or above 2 m/s. The speed is the baseline feature "carrier speed" as implemented (clarification 1 above). The threshold
+   is fixed here. The out-of-fold predictions of the primary comparison are reused and the metric difference is computed per group,
+   with the paired cluster bootstrap of section 9. Reason: a moving carrier faces roughly where they run, so the baseline's
+   heading feature already carries the orientation. Pose can add most where the carrier is slow.
+
+Clarification of section 6, same date, same state of knowledge.
+
+6. **The `{segment}_flip` flag.** The orientation table flags poses whose facing angle points more than 90 degrees away from a
+   label-independent forward cue, which indicates swapped left and right labels. For `p_blind_side` and the other pose features the
+   angles are used as they are. No pose is corrected and no engagement is excluded because of the flag. The number of included
+   engagements with a flagged carrier pose is reported, for the head and for the torso.
