@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from scipy.optimize import minimize
 from sklearn.linear_model import LogisticRegression
 
 from blindside.analysis.baseline import bootstrap_metrics, cluster_bootstrap_weights
@@ -23,6 +24,14 @@ from blindside.analysis.incremental import (
     train_test_predictions,
 )
 
+#: Tolerance of every comparison of fit_logistic with a reference solver.
+REFERENCE_ATOL = 1e-6
+
+
+def _reference(c: float) -> LogisticRegression:
+    """scikit-learn's fit with a second-order solver, converged far below the tolerance."""
+    return LogisticRegression(C=c, solver="newton-cholesky", tol=1e-12, max_iter=5000)
+
 
 def _data(n: int = 1200, pose_effect: float = 0.0, seed: int = 0):
     """Engagements in clusters of one to three, two matches, outcome from z and one pose feature."""
@@ -42,12 +51,58 @@ def test_fit_logistic_matches_scikit_learn():
     z, pose, y, _, _ = _data(pose_effect=0.8)
     x = np.column_stack([z, pose])
     for c in (0.01, 1.0, 100.0):
-        reference = LogisticRegression(C=c, tol=1e-10, max_iter=5000).fit(x, y.astype(int))
+        reference = _reference(c).fit(x, y.astype(int))
         ours = fit_logistic(x, y, np.full(x.shape[1], 1.0 / c))
-        np.testing.assert_allclose(ours[0], reference.intercept_[0], atol=2e-4)
-        np.testing.assert_allclose(ours[1:], reference.coef_[0], atol=2e-4)
+        np.testing.assert_allclose(ours[0], reference.intercept_[0], atol=REFERENCE_ATOL)
+        np.testing.assert_allclose(ours[1:], reference.coef_[0], atol=REFERENCE_ATOL)
         np.testing.assert_allclose(
-            predict_logistic(ours, x), reference.predict_proba(x)[:, 1], atol=1e-4
+            predict_logistic(ours, x), reference.predict_proba(x)[:, 1], atol=REFERENCE_ATOL
+        )
+
+
+def test_fit_logistic_without_penalty_matches_scikit_learn():
+    z, pose, y, _, _ = _data(pose_effect=0.8)
+    x = np.column_stack([z, pose])
+    # C=inf is the unpenalised maximum likelihood fit in scikit-learn.
+    reference = _reference(np.inf).fit(x, y.astype(int))
+    for ours in (fit_logistic(x, y), fit_logistic(x, y, np.zeros(x.shape[1]))):
+        np.testing.assert_allclose(ours[0], reference.intercept_[0], atol=REFERENCE_ATOL)
+        np.testing.assert_allclose(ours[1:], reference.coef_[0], atol=REFERENCE_ATOL)
+        np.testing.assert_allclose(
+            predict_logistic(ours, x), reference.predict_proba(x)[:, 1], atol=REFERENCE_ATOL
+        )
+    # Model 0 is the same unpenalised fit on the baseline logit alone.
+    model0 = fit_logistic(z[:, None], y)
+    reference0 = _reference(np.inf).fit(z[:, None], y.astype(int))
+    np.testing.assert_allclose(
+        model0, np.r_[reference0.intercept_, reference0.coef_[0]], atol=REFERENCE_ATOL
+    )
+
+
+def test_fit_logistic_mixed_penalty_matches_scipy():
+    # Model 1: no penalty on the intercept and the baseline logit, 1 / C on the pose features.
+    # scikit-learn cannot fit this, so the reference is a direct minimisation of the objective.
+    z, pose, y, _, _ = _data(pose_effect=0.8)
+    x = np.column_stack([z, pose])
+    design = np.column_stack([np.ones(len(y)), x])
+    for c in (0.001, 0.1, 10.0):
+        penalty = np.r_[0.0, np.full(4, 1.0 / c)]
+        lam = np.r_[0.0, penalty]
+
+        def objective(beta, lam=lam):
+            eta = design @ beta
+            value = np.sum(np.logaddexp(0.0, eta) - y * eta) + 0.5 * lam @ beta**2
+            gradient = design.T @ (1.0 / (1.0 + np.exp(-eta)) - y) + lam * beta
+            return value, gradient
+
+        reference = minimize(
+            objective, np.zeros(design.shape[1]), jac=True, method="BFGS", options={"gtol": 1e-9}
+        )
+        assert np.max(np.abs(reference.jac)) < 1e-6
+        ours = fit_logistic(x, y, penalty)
+        np.testing.assert_allclose(ours, reference.x, atol=REFERENCE_ATOL)
+        np.testing.assert_allclose(
+            predict_logistic(ours, x), predict_logistic(reference.x, x), atol=REFERENCE_ATOL
         )
 
 
