@@ -48,9 +48,11 @@ and state clearly that it is implemented but not validated.
 Football theme: **Defensive Positioning**. "How can tracking and contextual data help us better understand the way players and teams defend?"
 
 Submission consists of exactly three things:
-1. A YouTube video of at most one minute, voiced by the participant.
+1. A YouTube video of at most three minutes (raised from one minute, update received 11 November 2026), voiced by the participant.
+   Covers: what we did, why we chose this problem, how we approached and solved it, implications and open-source potential.
 2. A public GitHub repository with all code and resources **except the data**, open-source licence, with a `LICENSE.md` file (not `LICENSE`).
 3. A `README.md` of at most 1000 words with at most **two figures or tables in total**, including instructions to reproduce the results in a clean environment.
+   Must be written in our own words and aligned with the video's content (same update).
 
 Disqualification triggers that matter for engineering:
 - Work that does not run out of the box.
