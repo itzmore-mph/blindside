@@ -22,6 +22,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
+from blindside.analysis.agreement import agreement_table
 from blindside.analysis.baseline import (
     N_BOOTSTRAP,
     bootstrap_metrics,
@@ -31,6 +32,7 @@ from blindside.analysis.baseline import (
     tune_and_fit,
 )
 from blindside.analysis.camera import cached_camera_estimate
+from blindside.analysis.consistency import SPEED_EDGES, speed_band_labels
 from blindside.analysis.incremental import (
     BIN_LABELS,
     INNER_FOLDS,
@@ -86,6 +88,11 @@ BASELINE_NAMES = {
 }
 #: Effectively no penalty, for the exploratory fit of Model 1 without shrinkage.
 NO_PENALTY_C = 1e6
+#: Exploratory binary pose label: blind if more than this share of the samples is blind.
+LABEL_THRESHOLD = 0.5
+BLIND_FEATURES = ("p_blind_side_head", "p_blind_side_torso")
+ALL_ROW = "all"
+CONFIDENT_ROW = "all, uncertain bin dropped"
 
 
 def _interval(estimate: float, low: float, high: float, digits: int = 4) -> str:
@@ -271,6 +278,42 @@ def bin_contrast(
     low, high = np.nanpercentile(resampled, [2.5, 97.5])
     estimate = values[blind].mean() - values[view].mean()
     return float(estimate), float(low), float(high), int(blind.sum()), int(view.sum())
+
+
+def proxy_agreement(
+    test: pd.DataFrame, features: dict[str, pd.DataFrame], weights: np.ndarray
+) -> pd.DataFrame:
+    """Exploratory: how well the XY proxy reproduces the pose-based blind-side label.
+
+    The proxy calls an engagement blind if the angle between the carrier's direction of
+    travel and the direction to the presser exceeds the field of view half-angle. The pose
+    label is ``p_blind_side`` above :data:`LABEL_THRESHOLD`. A second row keeps the
+    pre-registered bins and drops the uncertain one. Reads ``approach_angle_heading_deg``
+    and ``carrier_speed`` from ``test`` and nothing else: no outcome column is used.
+    """
+    heading = test["approach_angle_heading_deg"].to_numpy(dtype=float)
+    speed = test["carrier_speed"].to_numpy(dtype=float)
+    proxy = heading > FOV_HALF_ANGLE_DEG
+    band = np.digitize(speed, SPEED_EDGES[1:-1])
+    bands = {label: band == k for k, label in enumerate(speed_band_labels(SPEED_EDGES))}
+    tables = []
+    for feature in BLIND_FEATURES:
+        for bound in BOUNDS:
+            p = features[bound][feature].to_numpy(dtype=float)
+            defined = np.isfinite(p) & np.isfinite(heading) & np.isfinite(speed)
+            primary = agreement_table(
+                p > LABEL_THRESHOLD, proxy, weights, bands, keep=defined, min_size=MIN_BIN_SIZE
+            )
+            index = bin_index(p)
+            confident = agreement_table(
+                index == 2, proxy, weights, keep=defined & (index != 1), min_size=MIN_BIN_SIZE
+            ).assign(group=CONFIDENT_ROW)
+            tables.append(
+                pd.concat([primary, confident], ignore_index=True).assign(
+                    feature=feature, bound=bound
+                )
+            )
+    return pd.concat(tables, ignore_index=True)
 
 
 def compute(train: pd.DataFrame, test: pd.DataFrame, poses: pd.DataFrame) -> dict[str, object]:
@@ -509,6 +552,7 @@ def compute(train: pd.DataFrame, test: pd.DataFrame, poses: pd.DataFrame) -> dic
         )
     out["unpenalised_rows"] = pd.DataFrame(unpenalised_rows)
     out["unpenalised_coefficients"] = unpenalised_coefficients
+    out["proxy_agreement"] = proxy_agreement(test, features, weights)
     out["weights"] = weights
     return out
 
@@ -881,7 +925,72 @@ def render(test: pd.DataFrame, flow: pd.DataFrame, results: dict[str, object]) -
             )
         free_rows.append(row)
     add(_md_table(pd.DataFrame(free_rows)))
-    return "\n".join(lines)
+
+    add("\n### 1.10 Exploratory, not pre-registered: XY proxy against the pose blind-side label\n")
+    add(
+        "How well does XY tracking alone reproduce the pose-based blind-side label? "
+        "No outcome column is used in this section.\n"
+    )
+    add(
+        f"- XY proxy: blind if `approach_angle_heading_deg` exceeds {FOV_HALF_ANGLE_DEG:g} "
+        "degrees, the angle between the carrier's direction of travel over the 0.5 s before t0 "
+        "and the direction to the presser. Same threshold as the field of view half-angle."
+    )
+    add(
+        f"- Pose label, rows by speed and the row `{ALL_ROW}`: blind if `p_blind_side` exceeds "
+        f"{LABEL_THRESHOLD:g}, on every included engagement. Row `{CONFIDENT_ROW}`: the "
+        "pre-registered bins, blind above 0.9 against in view below 0.1, without the engagements "
+        "between."
+    )
+    add(
+        "- Agreement: share of engagements with the same label. Kappa: Cohen's kappa, agreement "
+        "beyond what the two blind rates give by chance. Recall: share of the pose-blind "
+        "engagements that the proxy also calls blind. Precision: share of the proxy-blind "
+        "engagements that the pose label also calls blind."
+    )
+    add(
+        "- Carrier speed: `carrier_speed`, mean over the 0.5 s before t0, in the bands of "
+        "`blindside.analysis.consistency.SPEED_EDGES`. Intervals: cluster bootstrap over "
+        "possessions as in 1.1, every "
+        f"statistic recomputed per resample. Rows with fewer than {MIN_BIN_SIZE} engagements "
+        "carry no interval.\n"
+    )
+    agreement: pd.DataFrame = results["proxy_agreement"]  # type: ignore[assignment]
+
+    def share(row: pd.Series, name: str) -> str:
+        if np.isnan(row[name]):
+            return "n/a"
+        if np.isnan(row[f"{name}_low"]):
+            return f"{100 * row[name]:.1f}"
+        return (
+            f"{100 * row[name]:.1f} ({100 * row[f'{name}_low']:.1f} to "
+            f"{100 * row[f'{name}_high']:.1f})"
+        )
+
+    for feature in BLIND_FEATURES:
+        add(f"`{feature}`:\n")
+        rows = []
+        for row in agreement[agreement["feature"] == feature].to_dict("records"):
+            kappa = (
+                "n/a"
+                if np.isnan(row["kappa"])
+                else _interval(row["kappa"], row["kappa_low"], row["kappa_high"], 2)
+            )
+            rows.append(
+                {
+                    "Bound": row["bound"],
+                    "Carrier speed": row["group"],
+                    "Engagements": f"{row['n']:,}",
+                    "Pose blind, %": f"{100 * row['pose_blind']:.1f}",
+                    "Proxy blind, %": f"{100 * row['xy_blind']:.1f}",
+                    "Agreement, % (95% interval)": share(row, "agreement"),
+                    "Kappa (95% interval)": kappa,
+                    "Recall, % (95% interval)": share(row, "recall"),
+                    "Precision, % (95% interval)": share(row, "precision"),
+                }
+            )
+        add(_md_table(pd.DataFrame(rows)) + "\n")
+    return "\n".join(lines).rstrip("\n")
 
 
 def write_docs(markdown: str) -> None:

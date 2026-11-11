@@ -271,6 +271,49 @@ Its coefficients on all included engagements, per standard deviation of the feat
 | `p_blind_side_torso` | -0.041 (-0.338 to +0.247) | +0.011 (-0.339 to +0.335) |
 | `presser_alignment` | -0.011 (-0.173 to +0.134) | -0.002 (-0.163 to +0.138) |
 | `carrier_openness` | +0.023 (-0.155 to +0.204) | +0.020 (-0.159 to +0.202) |
+
+### 1.10 Exploratory, not pre-registered: XY proxy against the pose blind-side label
+
+How well does XY tracking alone reproduce the pose-based blind-side label? No outcome column is used in this section.
+
+- XY proxy: blind if `approach_angle_heading_deg` exceeds 100 degrees, the angle between the carrier's direction of travel over the 0.5 s before t0 and the direction to the presser. Same threshold as the field of view half-angle.
+- Pose label, rows by speed and the row `all`: blind if `p_blind_side` exceeds 0.5, on every included engagement. Row `all, uncertain bin dropped`: the pre-registered bins, blind above 0.9 against in view below 0.1, without the engagements between.
+- Agreement: share of engagements with the same label. Kappa: Cohen's kappa, agreement beyond what the two blind rates give by chance. Recall: share of the pose-blind engagements that the proxy also calls blind. Precision: share of the proxy-blind engagements that the pose label also calls blind.
+- Carrier speed: `carrier_speed`, mean over the 0.5 s before t0, in the bands of `blindside.analysis.consistency.SPEED_EDGES`. Intervals: cluster bootstrap over possessions as in 1.1, every statistic recomputed per resample. Rows with fewer than 50 engagements carry no interval.
+
+`p_blind_side_head`:
+
+| Bound | Carrier speed | Engagements | Pose blind, % | Proxy blind, % | Agreement, % (95% interval) | Kappa (95% interval) | Recall, % (95% interval) | Precision, % (95% interval) |
+|---|---|---|---|---|---|---|---|---|
+| lower | all | 1,875 | 20.5 | 45.5 | 65.8 (63.5 to 68.0) | +0.28 (+0.24 to +0.31) | 77.4 (73.1 to 81.3) | 34.9 (31.9 to 38.0) |
+| lower | 0 to 2 m/s | 665 | 15.8 | 51.0 | 54.0 (50.1 to 57.8) | +0.09 (+0.04 to +0.15) | 65.7 (56.8 to 74.7) | 20.4 (16.3 to 24.7) |
+| lower | 2 to 4 m/s | 727 | 23.8 | 49.9 | 65.6 (61.9 to 69.1) | +0.31 (+0.25 to +0.37) | 82.7 (76.7 to 88.3) | 39.4 (34.3 to 44.4) |
+| lower | 4 to 6 m/s | 370 | 23.0 | 32.4 | 81.4 (77.2 to 85.3) | +0.54 (+0.44 to +0.63) | 80.0 (71.4 to 88.4) | 56.7 (47.6 to 65.6) |
+| lower | above 6 m/s | 113 | 19.5 | 27.4 | 85.0 (78.4 to 91.3) | +0.58 (+0.41 to +0.74) | 81.8 (65.0 to 95.8) | 58.1 (42.1 to 74.2) |
+| lower | all, uncertain bin dropped | 1,819 | 19.6 | 45.0 | 66.5 (64.2 to 68.7) | +0.29 (+0.25 to +0.33) | 79.3 (74.9 to 83.1) | 34.6 (31.5 to 37.8) |
+| upper | all | 1,875 | 20.5 | 45.5 | 65.8 (63.5 to 68.0) | +0.28 (+0.24 to +0.32) | 77.6 (73.4 to 81.5) | 34.9 (31.9 to 38.1) |
+| upper | 0 to 2 m/s | 665 | 15.8 | 51.0 | 54.0 (50.1 to 57.8) | +0.09 (+0.04 to +0.15) | 65.7 (56.8 to 74.7) | 20.4 (16.3 to 24.7) |
+| upper | 2 to 4 m/s | 727 | 23.8 | 49.9 | 65.6 (61.9 to 69.1) | +0.31 (+0.25 to +0.37) | 82.7 (76.6 to 88.3) | 39.4 (34.4 to 44.3) |
+| upper | 4 to 6 m/s | 370 | 22.7 | 32.4 | 81.6 (77.5 to 85.5) | +0.55 (+0.45 to +0.64) | 81.0 (72.5 to 89.3) | 56.7 (47.6 to 65.6) |
+| upper | above 6 m/s | 113 | 19.5 | 27.4 | 85.0 (78.3 to 91.3) | +0.58 (+0.41 to +0.74) | 81.8 (64.0 to 95.8) | 58.1 (40.7 to 75.0) |
+| upper | all, uncertain bin dropped | 1,533 | 16.1 | 42.7 | 68.6 (66.2 to 70.9) | +0.30 (+0.26 to +0.34) | 85.0 (80.5 to 89.2) | 32.1 (28.6 to 35.6) |
+
+`p_blind_side_torso`:
+
+| Bound | Carrier speed | Engagements | Pose blind, % | Proxy blind, % | Agreement, % (95% interval) | Kappa (95% interval) | Recall, % (95% interval) | Precision, % (95% interval) |
+|---|---|---|---|---|---|---|---|---|
+| lower | all | 1,875 | 23.2 | 45.5 | 69.1 (66.9 to 71.2) | +0.35 (+0.31 to +0.39) | 81.4 (77.6 to 84.9) | 41.5 (38.3 to 44.8) |
+| lower | 0 to 2 m/s | 665 | 17.1 | 51.0 | 54.4 (50.7 to 58.3) | +0.10 (+0.04 to +0.16) | 65.8 (56.6 to 74.6) | 22.1 (17.9 to 26.7) |
+| lower | 2 to 4 m/s | 727 | 27.2 | 49.9 | 70.4 (66.9 to 73.8) | +0.41 (+0.35 to +0.47) | 87.4 (82.5 to 92.0) | 47.7 (42.3 to 52.8) |
+| lower | 4 to 6 m/s | 370 | 25.4 | 32.4 | 85.9 (82.0 to 89.4) | +0.66 (+0.57 to +0.74) | 86.2 (79.1 to 92.7) | 67.5 (58.4 to 76.5) |
+| lower | above 6 m/s | 113 | 25.7 | 27.4 | 91.2 (85.5 to 96.3) | +0.77 (+0.63 to +0.90) | 86.2 (72.4 to 96.8) | 80.6 (66.7 to 94.1) |
+| lower | all, uncertain bin dropped | 1,833 | 22.5 | 45.2 | 69.4 (67.2 to 71.6) | +0.35 (+0.31 to +0.39) | 82.3 (78.6 to 85.9) | 41.1 (37.8 to 44.3) |
+| upper | all | 1,875 | 23.0 | 45.5 | 69.1 (66.9 to 71.2) | +0.35 (+0.31 to +0.39) | 81.7 (77.9 to 85.2) | 41.3 (38.1 to 44.5) |
+| upper | 0 to 2 m/s | 665 | 17.0 | 51.0 | 54.6 (50.8 to 58.3) | +0.10 (+0.04 to +0.16) | 66.4 (57.3 to 75.2) | 22.1 (17.9 to 26.7) |
+| upper | 2 to 4 m/s | 727 | 27.0 | 49.9 | 70.2 (66.7 to 73.5) | +0.40 (+0.34 to +0.46) | 87.2 (82.3 to 92.0) | 47.1 (41.8 to 52.3) |
+| upper | 4 to 6 m/s | 370 | 25.4 | 32.4 | 85.9 (82.0 to 89.4) | +0.66 (+0.57 to +0.74) | 86.2 (79.1 to 92.7) | 67.5 (58.4 to 76.5) |
+| upper | above 6 m/s | 113 | 24.8 | 27.4 | 92.0 (86.6 to 96.7) | +0.79 (+0.66 to +0.91) | 89.3 (76.9 to 100.0) | 80.6 (66.7 to 94.1) |
+| upper | all, uncertain bin dropped | 1,726 | 21.1 | 44.0 | 70.5 (68.2 to 72.7) | +0.37 (+0.33 to +0.41) | 84.3 (80.5 to 87.8) | 40.4 (37.1 to 43.9) |
 <!-- incremental:end -->
 
 ## 2. Reading of the results
@@ -308,6 +351,27 @@ Exploratory, not pre-registered (1.9):
 - The highest loss rates are in the uncertain bin, where the presser stands near the edge of the visual field
   (head, lower bound: 21.4% of 56 engagements, 7.4 points above the XY expectation, interval minus 2.1 to plus 19.0).
   The interval includes zero and the bin was not singled out beforehand. It is a lead, not a finding.
+
+Exploratory, not pre-registered, no outcome used (1.10):
+- **The XY proxy reproduces the pose label poorly overall.** Calling an engagement blind when the presser is more than
+  100 degrees off the carrier's direction of travel agrees with the head label in 65.8% of engagements (63.5 to 68.0),
+  Cohen's kappa 0.28 (0.24 to 0.31). For the torso label kappa is 0.35 (0.31 to 0.39).
+- **The proxy calls far more engagements blind than pose does.** 45.5% against 20.5% (head). It finds 77% of the pose-blind
+  engagements, and 35% of the engagements it calls blind are blind by pose. As a stand-in for the blind side it over-calls
+  by a factor of about two.
+- **Agreement grows with carrier speed, as expected before the run.** Head label: kappa 0.09 (0.04 to 0.15) below 2 m/s,
+  0.31 at 2 to 4, 0.54 at 4 to 6 and 0.58 (0.41 to 0.74) above 6 m/s. Torso label: 0.10, 0.41, 0.66 and 0.77 (0.63 to 0.90).
+  Below 2 m/s the proxy is close to chance, and 665 of the 1,875 engagements (35%) are in that band. The direction of travel
+  of a slow carrier says little about where they face (docs/RELIABILITY.md section 2.4).
+- **The head follows the direction of travel less than the torso at every speed above 2 m/s.** At 4 m/s and more, 57 to 58%
+  of the proxy-blind engagements are blind by the head label against 68 to 81% by the torso label. Whether that gap is
+  head turning or head noise cannot be told here, the head has the larger angular uncertainty.
+- **The bounds do not matter for this comparison.** A label cut at `p_blind_side` 0.5 is almost the point estimate, so both
+  bounds give the same table to within 0.2 points. They differ only in the row without the uncertain bin, which drops
+  56 engagements under the lower bound and 342 under the upper one (head), and kappa stays at 0.29 to 0.30.
+- **Two readings, not separable without ground truth.** Low agreement means either that pose carries orientation that XY
+  does not have, or that one of the two labels is noisy. Kappa measures agreement, not which label is right.
+  Together with 1.4 it also says: the information is different, and it still does not improve the prediction of possession loss.
 
 What this does not show:
 - That body orientation is irrelevant for pressing. It shows that one orientation snapshot at the engagement start does not
