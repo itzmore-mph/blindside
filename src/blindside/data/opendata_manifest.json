@@ -1,0 +1,172 @@
+{
+  "description": "Size and sha256 of the non-LFS files of github.com/SkillCorner/opendata (MIT) that the package reads: dynamic events, match metadata and the committed body pose sample phase. Computed from a clone at the pinned commit. The files are fetched from raw.githubusercontent.com when no local clone is found.",
+  "repository": "SkillCorner/opendata",
+  "commit": "4340d274572876239c154c90bc507a9b3250a656",
+  "base_url": "https://raw.githubusercontent.com/SkillCorner/opendata/4340d274572876239c154c90bc507a9b3250a656",
+  "files": {
+    "data/bodypose/sample_1925299_phase406.jsonl.gz": {
+      "size_bytes": 1926895,
+      "sha256": "eb10f537c5c3b3c80018d5670f16cb788b14a3529d0be0b36a077bd1b41aeb4a"
+    },
+    "data/matches/1874553/1874553_dynamic_events.csv": {
+      "size_bytes": 4738858,
+      "sha256": "92507490abbbeec7697227581c864cfb0a96c29b214dd63dcaa48929bb6c6408"
+    },
+    "data/matches/1874553/1874553_match.json": {
+      "size_bytes": 33730,
+      "sha256": "e6974e402779d8be44e75bf88ef2a3acfd4d025b87b3fc57f518fa826a645ad8"
+    },
+    "data/matches/1886347/1886347_dynamic_events.csv": {
+      "size_bytes": 4918599,
+      "sha256": "b21368b9b94eb8f83032fe14a2a8da88ab7eda048b4f8078c06d0e6955d12bfb"
+    },
+    "data/matches/1886347/1886347_match.json": {
+      "size_bytes": 27541,
+      "sha256": "30c608e78663e9f490b3545479a3ce67b171f418c5133d5609cb249a2466abb2"
+    },
+    "data/matches/1899585/1899585_dynamic_events.csv": {
+      "size_bytes": 4375032,
+      "sha256": "14c62ffc99aa5fd62998c238036873509a9d82ced44354697a1db4251424d557"
+    },
+    "data/matches/1899585/1899585_match.json": {
+      "size_bytes": 27810,
+      "sha256": "41de8cb74a0512fcf0cbaaa5c615ae3e7dcaaf6745b9c78a050b59b906b1cb06"
+    },
+    "data/matches/1925299/1925299_dynamic_events.csv": {
+      "size_bytes": 5043601,
+      "sha256": "2557acbdcba6547d764b9f7c277c3d7e81a4d58692d6c20c2bfa28625ae0cce3"
+    },
+    "data/matches/1925299/1925299_match.json": {
+      "size_bytes": 28396,
+      "sha256": "f4345b32c0fdd7c9990df70050b3a74f57b1992cf762e20f2a4d309bd2fba7d2"
+    },
+    "data/matches/1927964/1927964_dynamic_events.csv": {
+      "size_bytes": 5509112,
+      "sha256": "638747f76b43690974f95958952dfe62c9e50d64648f9456f43f66d5d91201f3"
+    },
+    "data/matches/1927964/1927964_match.json": {
+      "size_bytes": 33400,
+      "sha256": "f967f911c20f5c5f8c89bbe2020a30c92731173616d5a1e4bafeb65435278b76"
+    },
+    "data/matches/1953632/1953632_dynamic_events.csv": {
+      "size_bytes": 4643533,
+      "sha256": "d1f676ebb182da585da128fc80d468e27fb676e254abc47531daf920d977e51f"
+    },
+    "data/matches/1953632/1953632_match.json": {
+      "size_bytes": 27767,
+      "sha256": "366c8dd6b504d4f4ace5685040648b0f30081043a44f01663b8b7e077e6bfde8"
+    },
+    "data/matches/1959846/1959846_dynamic_events.csv": {
+      "size_bytes": 4499680,
+      "sha256": "aa3d08a927a84f2b42d976cc10401e9efc52468744e0a7a86cb0d3dc2e288058"
+    },
+    "data/matches/1959846/1959846_match.json": {
+      "size_bytes": 32946,
+      "sha256": "4bbe2058af53edd42d5e3acd7fb28ecb8c79e4afb16cb9b77a6fe9b58f6e516b"
+    },
+    "data/matches/1986691/1986691_dynamic_events.csv": {
+      "size_bytes": 4290910,
+      "sha256": "c2f7102092970368cc487353d6e93e06522f8d3f184326cced63fa167ca0d9f5"
+    },
+    "data/matches/1986691/1986691_match.json": {
+      "size_bytes": 33792,
+      "sha256": "754f6a6fd0d996236cf553ef5c3c24513274b0db024cb6833a7419b08d55dd68"
+    },
+    "data/matches/1996435/1996435_dynamic_events.csv": {
+      "size_bytes": 4964532,
+      "sha256": "379e5bbd90df47d2358a2bfc5b741f7626b934db780ff33d3337a8b1d5efc87c"
+    },
+    "data/matches/1996435/1996435_match.json": {
+      "size_bytes": 27830,
+      "sha256": "f54179645d3c3f308a7094086283277f2a7c99da5f3919302e622cbd82f9d065"
+    },
+    "data/matches/1996436/1996436_dynamic_events.csv": {
+      "size_bytes": 3760511,
+      "sha256": "94e7d7cc23ace6fd3eda12fb869eb2a0fef49402d7d72b7fb8155b4b2588da2d"
+    },
+    "data/matches/1996436/1996436_match.json": {
+      "size_bytes": 32859,
+      "sha256": "4e8999668a79fccd43f01e5538d7595b4614ec6061d648b831a96951e495c78a"
+    },
+    "data/matches/2006229/2006229_dynamic_events.csv": {
+      "size_bytes": 4778846,
+      "sha256": "6308c15890803ed5cd44e8bc2fbb1844cce20bd59d63b154aec82977af8c6588"
+    },
+    "data/matches/2006229/2006229_match.json": {
+      "size_bytes": 28213,
+      "sha256": "87386df74b45eb7ccac80742c603763146cb2b61f47561122355fe246d8795eb"
+    },
+    "data/matches/2006363/2006363_dynamic_events.csv": {
+      "size_bytes": 4794999,
+      "sha256": "430d5f840723c4c667b907e161716265b5ae4b87b4466a4883d3b95b5b5e5a58"
+    },
+    "data/matches/2006363/2006363_match.json": {
+      "size_bytes": 33294,
+      "sha256": "26d4068baf7454d1e066b6e70715da6c7ac016b14963a3bfa3ed99ed7c3aba79"
+    },
+    "data/matches/2007448/2007448_dynamic_events.csv": {
+      "size_bytes": 4146729,
+      "sha256": "076e7a85949a1aca485bf202823a2b04b6d5eb20212faac1e51d346c6f4ac2a7"
+    },
+    "data/matches/2007448/2007448_match.json": {
+      "size_bytes": 32670,
+      "sha256": "434b31c032656be4a89e7042eadd442d4dfb468e4bfa87ce188102f314262873"
+    },
+    "data/matches/2007721/2007721_dynamic_events.csv": {
+      "size_bytes": 4653039,
+      "sha256": "c102f35837a9e50f642bd3378f9303ccd4d9a40d07717a12423966c3fb66fe36"
+    },
+    "data/matches/2007721/2007721_match.json": {
+      "size_bytes": 33745,
+      "sha256": "0ed112bc955eb341bc25005f9a7bb3fdf040223c8e1765646225c47e974b6139"
+    },
+    "data/matches/2010085/2010085_dynamic_events.csv": {
+      "size_bytes": 4484006,
+      "sha256": "792b2ac103e314835b4e7d5a213b67093497c4a8a3756dfae3ec66b059de6ee3"
+    },
+    "data/matches/2010085/2010085_match.json": {
+      "size_bytes": 33744,
+      "sha256": "3222413d358251e1ac1cdde1f5ee2fd126b0d9cc3470c2aa1bb07177a09ef24d"
+    },
+    "data/matches/2011166/2011166_dynamic_events.csv": {
+      "size_bytes": 3846412,
+      "sha256": "7c2827cea8135395b77f70592c59721189da3b6c9abc94688884c073c3233a18"
+    },
+    "data/matches/2011166/2011166_match.json": {
+      "size_bytes": 28420,
+      "sha256": "6b381b8bd338859c394c1992da137436e2e09cd609a81ac94d5f5f941d35d1bc"
+    },
+    "data/matches/2013725/2013725_dynamic_events.csv": {
+      "size_bytes": 4508257,
+      "sha256": "20bd127c17768d70dade9a76b43c1201c2c5e10f6c89d420847250136270ad83"
+    },
+    "data/matches/2013725/2013725_match.json": {
+      "size_bytes": 27899,
+      "sha256": "c8b9372fbd2e79ddcbb859b51b5086111ed7f3cd84ca0b457091c7d0e5209df3"
+    },
+    "data/matches/2015213/2015213_dynamic_events.csv": {
+      "size_bytes": 4417152,
+      "sha256": "1452564da8278500f4672152a27e361d3f5f1b9d741493e598e5bf7729a88811"
+    },
+    "data/matches/2015213/2015213_match.json": {
+      "size_bytes": 27937,
+      "sha256": "300342194bf3dcd9fe356ed30df26fd0ee6e8caeb8ce5d8cfd27cf90cd995dff"
+    },
+    "data/matches/2016236/2016236_dynamic_events.csv": {
+      "size_bytes": 4542962,
+      "sha256": "425274b44a124ec5e81ff8f2819cebd22702065d0f4e4f8070306db9ae97590a"
+    },
+    "data/matches/2016236/2016236_match.json": {
+      "size_bytes": 33791,
+      "sha256": "93ccf67cead82def1acda87d3cf550fd42f96cb0e1adbff9eeb8824077980495"
+    },
+    "data/matches/2017461/2017461_dynamic_events.csv": {
+      "size_bytes": 3957366,
+      "sha256": "d4ce943cd9b912cfcf1f6d2744c9f4ecd6db4d5f7bcd6152b946e2f5ba308878"
+    },
+    "data/matches/2017461/2017461_match.json": {
+      "size_bytes": 28545,
+      "sha256": "db27759bf734dc8e3d9e56f047965cc7c74833bc3d0345ee3821ab97681ce4b9"
+    }
+  }
+}

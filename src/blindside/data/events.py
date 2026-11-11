@@ -9,19 +9,9 @@ from typing import Any
 
 import pandas as pd
 
-from blindside.data.paths import opendata_dir
+from blindside.data.opendata import events_relative, metadata_relative, opendata_file
 
 ON_BALL_ENGAGEMENT = "on_ball_engagement"
-
-
-def _match_dir(match_id: int, root: Path | None) -> Path:
-    directory = Path(root or opendata_dir()) / "data" / "matches" / str(match_id)
-    if not directory.is_dir():
-        raise FileNotFoundError(
-            f"{directory} not found. Clone github.com/SkillCorner/opendata and pass its path, "
-            "or set BLINDSIDE_OPENDATA_DIR."
-        )
-    return directory
 
 
 def load_dynamic_events(
@@ -36,11 +26,13 @@ def load_dynamic_events(
     match_id
         SkillCorner match id.
     root
-        Path of the opendata clone, default :func:`blindside.data.paths.opendata_dir`.
+        Path of an opendata clone. By default a clone in ``$BLINDSIDE_OPENDATA_DIR`` or
+        ``../opendata`` is used, and without one the file is downloaded
+        (:func:`blindside.data.opendata.opendata_file`).
     columns
         Columns to read. Pass a list to keep outcome columns out of an analysis step.
     """
-    path = _match_dir(match_id, root) / f"{match_id}_dynamic_events.csv"
+    path = opendata_file(events_relative(match_id), root)
     return pd.read_csv(
         path,
         usecols=list(columns) if columns is not None else None,
@@ -55,5 +47,5 @@ def on_ball_engagements(events: pd.DataFrame) -> pd.DataFrame:
 
 def load_match_metadata(match_id: int, root: Path | None = None) -> dict[str, Any]:
     """Read ``{match_id}_match.json`` (periods, pitch size, teams, players)."""
-    path = _match_dir(match_id, root) / f"{match_id}_match.json"
+    path = opendata_file(metadata_relative(match_id), root)
     return json.loads(path.read_text("utf-8"))
