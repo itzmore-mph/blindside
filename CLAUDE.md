@@ -209,6 +209,51 @@ README.md      # the judged document: max 1000 words, max two figures or tables
 LICENSE.md
 ```
 
+## Commands
+
+```
+uv sync                             # install, including the dev group (pytest, ruff, scipy)
+uv run pytest                       # full test suite
+uv run pytest tests/test_orientation.py          # one file
+uv run pytest tests/test_orientation.py::test_x  # one test
+uv run ruff check .                 # lint
+uv run ruff format --check .        # format check (CI fails on unformatted code)
+uv run python scripts/check_readme.py            # enforce README word/figure limits
+uv run blindside reproduce --fast   # sample phase only, under 5 min, writes outputs/fast/ (git ignored)
+uv run blindside reproduce          # full run, both README figures, ~13 min, downloads 1.4 GB
+uv run blindside reproduce --with-test  # also refits baseline on 18 matches, reruns the pre-registered test, ~3 GB
+```
+
+CI (`.github/workflows/ci.yml`) runs lint, `check_readme.py`, `pytest`, and `blindside reproduce --fast` on a clean
+runner (Python 3.11 and 3.13), plus a separate `pip install .` job that checks the package and CLI work outside uv
+and outside the repository. There is no local data directory in CI: the fast path downloads everything it needs.
+
+## Architecture: how a run flows
+
+`src/blindside/analysis/pipeline.py` is the shared spine between `scripts/*.py` (which render `docs/*.md`) and
+`cli.py` (which renders the two README figures). Both call into the same functions, so the reported numbers and the
+regenerated figures never diverge. Rough data flow for `blindside reproduce`:
+
+1. **`data/`** downloads and verifies pose archives (Hugging Face) and tracking (`opendata` LFS media), or reads
+   them from `BLINDSIDE_OPENDATA_DIR` / `../opendata` if present. `pose.py` streams the pose JSONL; nothing loads a
+   full match into memory at once.
+2. **`features/orientation_table.py`** turns a streamed pose file into a cached per-frame, per-player parquet table
+   (`data/cache/`) via `geometry/orientation.py` (facing angles) and `geometry/uncertainty.py` (Monte Carlo angular
+   SD under both the lower/jitter and upper/independent-joint bounds).
+3. **`analysis/reliability.py`** and **`analysis/camera.py`** turn that table into the reliability-map inputs
+   (pitch zone, speed band, camera-side distance) consumed by `viz/reliability.py` for figure 1.
+4. **`features/engagements.py`** and **`features/xy_baseline.py`** build the on-ball-engagement table with the
+   pre-registered inclusion criteria and the XY-only baseline features; **`features/pose_features.py`** attaches
+   `p_blind_side` and friends for engagements with pose at both ends.
+5. **`analysis/baseline.py`** (fit, cluster bootstrap) and **`analysis/incremental.py`** (out-of-fold log loss,
+   calibration, robustness checks) implement the frozen pre-registered comparison; **`analysis/agreement.py`**
+   implements the exploratory XY-proxy-versus-pose-label kappa behind figure 2 (`viz/agreement.py`).
+6. `cli.py` orchestrates steps 1 to 5 end to end for `reproduce`/`reproduce --fast`/`reproduce --with-test`; the
+   `scripts/` files call the same `pipeline.py` functions to regenerate the numbers embedded in `docs/*.md`.
+
+When changing a geometry or feature function, check both call sites (a `scripts/` file and `cli.py`/`pipeline.py`)
+so the README figures and the `docs/` write-ups stay consistent.
+
 ## How to work
 
 - Follow `docs/PLAN.md` phase by phase. Do not start a phase before the previous gate is passed.
