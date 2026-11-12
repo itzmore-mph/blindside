@@ -5,9 +5,9 @@
 Entry for the SkillCorner X PySport Analytics Cup 2.0, theme Defensive Positioning.
 Video: _link added at submission_. The sections follow it.
 
-## What we did
+## What I did
 
-We measured where a ball carrier faces from SkillCorner's broadcast body pose (29 joints, 25 fps, two matches),
+I measured where a ball carrier faces from SkillCorner's broadcast body pose (29 joints, 25 fps, two matches),
 with its measurement error, and asked of 1,875 on-ball engagements whether the presser came from outside the
 carrier's visual field.
 
@@ -26,7 +26,7 @@ Exploratory, no outcome used. Kappa measures agreement, not accuracy: without gr
 
 Pressing a ball carrier from outside their visual field is a coaching staple, but XY tracking has no body
 orientation. Analysts fall back on a proxy: the presser comes from behind the carrier's direction of travel.
-Body pose lets us check whom that proxy labels:
+Body pose lets me check whom that proxy labels:
 
 - **Carrier below 2 m/s** (35% of engagements): proxy and pose label agree barely beyond chance.
   Do not count blind-side presses from XY alone.
@@ -34,10 +34,10 @@ Body pose lets us check whom that proxy labels:
 - **Read `p_blind_side` under both bounds.** Between 0.1 and 0.9 the press is undecided: 56 engagements under
   the lower bound, 342 under the upper (head).
 
-## How we solved it, with uncertainty bounds
+## How I solved it, with uncertainty bounds
 
 1. **Orientation with uncertainty.** Torso, hip and head facing come from the shoulder, hip and ear pairs in the
-   ground plane. Every joint ships with a predicted error (`p90_mae_cm`). We treat it as an isotropic Gaussian
+   ground plane. Every joint ships with a predicted error (`p90_mae_cm`). I treat it as an isotropic Gaussian
    (sigma = p90 / 2.5, an assumption, varied from 2.0 to 3.0) and propagate it by Monte Carlo into a circular
    standard deviation.
 2. **A bracket, not a number.** Independent joint errors overstate the angular noise if joint errors are correlated.
