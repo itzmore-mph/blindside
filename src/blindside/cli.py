@@ -20,11 +20,15 @@ import time
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from blindside import __version__
 from blindside.data.download import DownloadError
+
+if TYPE_CHECKING:
+    from matplotlib.figure import Figure
 
 FIGURE_1 = "reliability_composite.png"
 FIGURE_2 = "proxy_agreement.png"
@@ -42,7 +46,7 @@ def _say(message: str) -> None:
     print(message, flush=True)
 
 
-def _save(figure, path: Path) -> None:
+def _save(figure: Figure, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(path, dpi=DPI)
     _say(f"wrote {path}")

@@ -3,7 +3,7 @@
 **Who is pressed from the blind side? Broadcast body pose against the XY proxy, with honest uncertainty.**
 
 Entry for the SkillCorner X PySport Analytics Cup 2.0, theme Defensive Positioning.
-Video (one minute): _link added at submission_.
+Video: _link added at submission_.
 
 ## The question
 
@@ -23,7 +23,14 @@ Over 1,875 on-ball engagements:
 
 This comparison is exploratory and uses no outcome. Kappa measures agreement, not accuracy: without ground truth,
 "pose carries orientation that XY lacks" and "one of the labels is noisy" cannot be separated.
-The practical reading for an analyst: do not count blind-side presses from XY alone on slow carriers.
+
+### Football and coaching application
+
+- **Carrier below 2 m/s** (35% of engagements): the XY proxy and the pose label agree barely beyond chance.
+  Do not count blind-side presses from XY alone here.
+- **Carrier above 4 m/s**: kappa 0.54 to 0.77 across head and torso. The XY proxy is a workable stand-in.
+- **Read `p_blind_side` under both bounds.** Between 0.1 and 0.9 the presser stands near the edge of the visual
+  field and the press is undecided: 56 engagements under the lower bound, 342 under the upper (head).
 
 ## Method
 
@@ -44,16 +51,18 @@ The practical reading for an analyst: do not count blind-side presses from XY al
 Prior art: SkillCorner's reference helper (MIT) gates shoulder orientation with a hard 15 cm threshold.
 This package propagates the error instead.
 
-## The pre-registered test: a null result
+## The pre-registered test: what 217 events can resolve
 
-Before any outcome was joined to pose, [docs/PREREGISTRATION.md](docs/PREREGISTRATION.md) fixed the outcome
+Design: before any outcome was joined to pose, [docs/PREREGISTRATION.md](docs/PREREGISTRATION.md) fixed the outcome
 (possession loss of the pressed possession), an XY baseline fitted on the 18 matches without pose, four pose
-features, the model and the resampling.
+features, the model and the resampling, clustered by possession.
+
+Resolution: the two pose matches hold 217 possession losses in 1,875 engagements. The unpenalised coefficient of
+`p_blind_side` has an odds ratio interval of 0.84 to 1.47 per standard deviation: an effect up to about 1.5
+could not have been told from zero.
 
 Result: **no detectable increment.** Adding the pose features changes the out-of-sample log loss by minus 0.0002
 (95% intervals within minus 0.0004 to 0.0000) under both bounds, and none of ten robustness checks changes that.
-Resolution: with 217 possession losses, the unpenalised coefficient of `p_blind_side` has an odds ratio interval of
-0.84 to 1.47 per standard deviation, so an effect up to about 1.5 could not have been told from zero.
 The blind-side metric is implemented and geometrically verified, not validated as an explanatory variable.
 
 ## What is reusable

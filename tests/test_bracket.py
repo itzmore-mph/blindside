@@ -166,6 +166,16 @@ def test_bound_correlation_lookup() -> None:
         bound_correlation("hips", "middle")
     with pytest.raises(ValueError):
         bound_correlation("feet", "lower")
+    # Wrong case, swapped arguments and non-strings are rejected, never looked up loosely.
+    invalid = [("Hips", "lower"), ("hips", "Lower"), ("lower", "hips"), ("hips", "")]
+    invalid += [("hips", None), (None, "lower"), (0, "upper")]
+    for segment, bound in invalid:
+        with pytest.raises(ValueError):
+            bound_correlation(segment, bound)
+    assert set(BOUND_CORRELATION) == {"lower", "upper"}
+    assert set(BOUND_CORRELATION["lower"]) == set(BOUND_CORRELATION["upper"])
+    for segment in BOUND_CORRELATION["upper"]:
+        assert bound_correlation(segment, "lower") > bound_correlation(segment, "upper") == 0.0
 
 
 def _correlated_noise_table(rho: float, upper_sd: float, n: int = 40_000) -> pd.DataFrame:

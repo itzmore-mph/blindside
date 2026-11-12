@@ -148,7 +148,8 @@ def orientation_columns(
         ``p90_mae_cm`` per joint, shape ``(poses, len(TABLE_JOINTS))``.
     rng, rng_low
         Generators for the upper and the lower bound. They are separate streams so that
-        the upper bound does not depend on whether a lower bound is computed.
+        the upper bound does not depend on whether a lower bound is computed. Without
+        ``rng_low`` the lower bound uses a fresh unseeded generator and is not reproducible.
 
     Returns
     -------
@@ -273,6 +274,12 @@ def build_orientation_table(
         Monte Carlo and velocity settings, default :class:`OrientationConfig`.
     progress
         Optional callback receiving the number of frames read so far, once per batch.
+
+    Returns
+    -------
+    The table described in the module docstring, reproducible for a given ``config``. A file
+    without any resolved pose gives an empty table with the same columns. A pose whose joint
+    pair coincides has NaN angles and NaN uncertainty for that segment.
     """
     config = config or OrientationConfig()
     rng = np.random.default_rng(config.seed)
@@ -351,7 +358,17 @@ def build_orientation_table(
         "y": xy[:, 1],
         "is_detected": np.frombuffer(row_detected, dtype=np.int8).astype(bool),
     }
-    if len(frames):
+    if not len(frames):
+        empty = orientation_columns(
+            np.empty((0, n_joints, 2)), np.empty((0, n_joints)), config, rng, rng_low
+        )
+        table["speed"] = np.empty(0, dtype=np.float32)
+        table["heading_deg"] = np.empty(0, dtype=np.float32)
+        for name, values in empty.items():
+            table[name] = values if values.dtype == bool else values.astype(np.float32)
+        table["centroid_dx_m"] = table.pop("centroid_x_m")
+        table["centroid_dy_m"] = table.pop("centroid_y_m")
+    else:
         speed, heading = _velocity_columns(
             np.frombuffer(pos_frame, dtype=np.int32),
             np.frombuffer(pos_player, dtype=np.int32),

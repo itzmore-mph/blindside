@@ -25,6 +25,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from numpy.typing import ArrayLike
 
 from blindside.data.paths import cache_dir
 from blindside.data.pose import iter_pose_frames, tracking_to_pose_frame
@@ -160,15 +161,15 @@ def cached_engagement_poses(
     return table
 
 
-def _direction(origin_xy: np.ndarray, target_xy: np.ndarray) -> np.ndarray:
+def _direction(origin_xy: ArrayLike, target_xy: ArrayLike) -> np.ndarray:
     """Angle of the vector from ``origin_xy`` to ``target_xy``. NaN where they coincide."""
     return vector_angle(np.asarray(target_xy, dtype=float) - np.asarray(origin_xy, dtype=float))
 
 
 def blind_side_probability(
-    facing_samples: np.ndarray,
-    carrier_xy: np.ndarray,
-    presser_xy: np.ndarray,
+    facing_samples: ArrayLike,
+    carrier_xy: ArrayLike,
+    presser_xy: ArrayLike,
     half_angle_deg: float = FOV_HALF_ANGLE_DEG,
 ) -> np.ndarray:
     """Share of facing samples for which the presser lies outside the carrier's visual field.
@@ -176,22 +177,31 @@ def blind_side_probability(
     Parameters
     ----------
     facing_samples
-        Samples of the carrier's facing angle in radians, shape ``(n_samples, n)``.
+        Samples of the carrier's facing angle in radians, shape ``(n_samples, n)``, or
+        ``(n_samples,)`` for a single engagement. Angles need not be wrapped.
     carrier_xy, presser_xy
-        Positions in metres, shape ``(n, 2)``.
+        Positions in metres, shape ``(n, 2)``, or ``(2,)`` for a single engagement.
     half_angle_deg
         Half-angle of the visual field. The presser is unseen if the direction to them
         deviates from the facing direction by more than this.
 
     Returns
     -------
-    Array ``(n,)`` in [0, 1]. NaN where a sample or the direction is undefined.
+    Array ``(n,)`` in [0, 1], a scalar array for a single engagement. NaN where a sample is
+    NaN or where the presser stands on the carrier, so that the direction is undefined.
+
+    Raises
+    ------
+    ValueError
+        If ``half_angle_deg`` is not strictly between 0 and 180 or there are no samples.
     """
     if not 0.0 < half_angle_deg < 180.0:
         raise ValueError("half_angle_deg must lie between 0 and 180")
     facing_samples = np.asarray(facing_samples, dtype=float)
+    if facing_samples.shape[0] == 0:
+        raise ValueError("facing_samples must hold at least one sample")
     to_presser = _direction(carrier_xy, presser_xy)
-    off = np.abs(angular_difference(to_presser[None, :], facing_samples))
+    off = np.abs(angular_difference(to_presser[None, ...], facing_samples))
     share = (off > np.radians(half_angle_deg)).mean(axis=0)
     undefined = np.isnan(off).any(axis=0)
     return np.where(undefined, np.nan, share)
@@ -242,6 +252,7 @@ def _segment_samples(
     p90_to_sigma: float,
     rng: np.random.Generator,
 ) -> np.ndarray:
+    """Facing samples ``(n_samples, len(pose))`` of one segment under one bound."""
     left, right = SEGMENT_JOINTS[segment]
     return sample_facing_angles(
         pose[[f"{left}_x", f"{left}_y"]].to_numpy(dtype=float),
@@ -286,7 +297,6 @@ def pose_feature_table(
     Returns
     -------
     One row per engagement, same index: :data:`POSE_FEATURES`, the circular SD of the
-    samples ``carrier_head_sd_deg``, ``carrier_torso_sd_deg``, ``presser_hips_sd_deg`` and
     samples ``carrier_head_sd_deg``, ``carrier_torso_sd_deg``, ``presser_hips_sd_deg``, the
     point-estimate facing angles ``carrier_head_deg``, ``carrier_torso_deg`` and
     ``presser_off_head_deg``, ``presser_off_torso_deg``: the absolute angle between the

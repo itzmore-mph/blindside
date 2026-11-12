@@ -208,6 +208,47 @@ def test_centroid_offset_is_hip_midpoint_minus_tracking(pose_file: Path, tmp_pat
     np.testing.assert_allclose(table["centroid_dy_m"], -0.1, atol=1e-5)
 
 
+def test_file_without_resolved_pose_gives_an_empty_table_with_all_columns(
+    pose_file: Path, tmp_path: Path
+) -> None:
+    columns = list(build_orientation_table(pose_file, match_id=7).columns)
+    no_joints = tmp_path / "no_joints.jsonl"
+    frames = [
+        {"frame": 1, "period": 1, "player_data": [{"player_id": 1, "x": 0.0, "y": 0.0,
+                                                   "is_detected": False, "joints": None}]},
+        {"frame": 2, "period": 1, "player_data": []},
+        {"frame": 3, "period": None, "player_data": None},
+    ]  # fmt: skip
+    no_joints.write_text("\n".join(json.dumps(frame) for frame in frames) + "\n")
+    empty_file = tmp_path / "empty.jsonl"
+    empty_file.write_text("")
+    for path in (no_joints, empty_file):
+        table = build_orientation_table(path, match_id=7)
+        assert len(table) == 0
+        assert list(table.columns) == columns
+
+
+def test_degenerate_joint_pair_gives_nan_for_that_segment_only(tmp_path: Path) -> None:
+    skeleton = make_skeleton(30 * DEG, (1.0, 2.0))
+    skeleton["rEar"] = skeleton["lEar"]  # the ears coincide: the head has no direction
+    lines = [
+        json.dumps({"frame": i, "period": 1, "player_data": [
+            {"player_id": 1, "x": 1.0, "y": 2.0, "is_detected": True,
+             "joints": _joints(skeleton, 6.0)}]})
+        for i in range(3)
+    ]  # fmt: skip
+    path = tmp_path / "degenerate.jsonl"
+    path.write_text("\n".join(lines) + "\n")
+    table = build_orientation_table(path, match_id=7)
+    assert (
+        table[["head_deg", "head_mean_deg", "head_sd_deg", "head_sd_low_deg"]].isna().all(axis=None)
+    )
+    assert (table["head_width_m"] == 0.0).all()
+    assert (
+        table[["torso_deg", "torso_sd_deg", "hips_deg", "hips_sd_low_deg"]].notna().all(axis=None)
+    )
+
+
 def test_cache_key_carries_the_table_version() -> None:
     from blindside.features.orientation_table import TABLE_VERSION
 
