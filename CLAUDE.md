@@ -73,7 +73,7 @@ Consequences for how we build:
 - One command reproduces both README figures from a clean clone: `uv run blindside reproduce`. It needs the two pose matches only
   (1.4 GB download). `--with-test` also refits the baseline on the other 18 matches and reruns the pre-registered comparison.
 - `uv run blindside reproduce --fast` runs on the sample phase and must finish in under five minutes. The sample holds two engagements,
-  so it cannot compute figure 2. Decided by Moritz on 11 November 2026: the fast path writes stamped stand-ins to `outputs/fast/`
+  so it cannot compute figure 2. The fast path writes stamped stand-ins to `outputs/fast/`
   (git ignored), the reliability composite on the sample and a geometry panel of the two engagements, and never touches `docs/figures/`.
 - `README.md` limits (1000 words, two figures or tables) are not checked automatically: `scripts/check_readme.py` was removed on
   12 November 2026. Count by hand after every README edit (conservative count: every whitespace-separated token).
@@ -185,10 +185,7 @@ Consequences for how we build:
 - All code, comments and docs in English. No em dashes in any text.
 - Plots with matplotlib and mplsoccer. One consistent style module in `src/blindside/viz/style.py`.
 - Small, reviewable commits. Never commit data files or credentials.
-- Every commit message ends with the trailer `Co-Authored-By: Claude <noreply@anthropic.com>`.
-  Project decision by Moritz (10 November 2026) to disclose AI assistance. The published rules neither require nor forbid it.
-  This overrides the global no-trailer preference for this repository only.
-
+- Every commit message ends with the trailer `Co-Authored-By: Claude <noreply@anthropic.com>` to disclose AI assistance.
 ## Repository layout
 
 ```
