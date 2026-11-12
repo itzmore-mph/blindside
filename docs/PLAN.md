@@ -237,7 +237,7 @@ Status: done on 12 Nov. Only the video and the submission are open.
   13 minutes including 1.4 GB of downloads (orientation tables 107 and 110 s). Both figures are byte-identical to the committed ones.
   `reproduce --with-test` on the cached data takes 170 s and prints minus 0.0002 (minus 0.0004 to 0.0000) under both bounds.
 - 12 Nov, after the rules update (video up to three minutes, README aligned with it): the README follows the four parts of the
-  video (what, why, how, implications and reuse). 998 words by the conservative count of `scripts/check_readme.py`,
+  video (what, why, how, implications and reuse). 998 words by a conservative count (every whitespace-separated token),
   two figures, no table.
 - 12 Nov, exploratory and outside the judged path: `classify_xy_reliability` for matches without body pose, a pitch case study
   for the video and `p_blind_side` against possession labels and defending phases (docs/EXPLORATORY_DYNAMIC_EVENTS.md).

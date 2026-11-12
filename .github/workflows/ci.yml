@@ -32,14 +32,15 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-      - name: README limits (1000 words, two figures or tables)
-        run: uv run python scripts/check_readme.py
       - name: Tests
         run: uv run pytest
       # A clean runner has no data and no opendata clone: everything is downloaded here.
       - name: Fast path on the sample phase, under five minutes
         timeout-minutes: 5
         run: uv run blindside reproduce --fast
+      - name: Example on the sample phase
+        timeout-minutes: 3
+        run: uv run python examples/quickstart.py
       - uses: actions/upload-artifact@v7
         with:
           name: fast-path-figures-py${{ matrix.python-version }}

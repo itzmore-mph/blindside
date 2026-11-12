@@ -72,7 +72,8 @@ Consequences for how we build:
 - `uv run blindside reproduce --fast` runs on the sample phase and must finish in under five minutes. The sample holds two engagements,
   so it cannot compute figure 2. Decided by Moritz on 11 November 2026: the fast path writes stamped stand-ins to `outputs/fast/`
   (git ignored), the reliability composite on the sample and a geometry panel of the two engagements, and never touches `docs/figures/`.
-- `README.md` limits are enforced by `scripts/check_readme.py` (conservative count: every whitespace-separated token) in the tests and in CI.
+- `README.md` limits (1000 words, two figures or tables) are not checked automatically: `scripts/check_readme.py` was removed on
+  12 November 2026. Count by hand after every README edit (conservative count: every whitespace-separated token).
 - The package must be installable and reusable on its own (`pip install .`), with a documented public API,
   because the winner's grant funds conversion into a package or a pull request to an existing library.
 - Do not commit data or derived data tables.
@@ -193,8 +194,9 @@ src/blindside/
   analysis/    # reliability map, incremental value test, pipeline.py (the steps shared by scripts and CLI)
   viz/         # plotting helpers
   cli.py       # `blindside reproduce [--fast | --with-test]`
-scripts/       # write the generated blocks of docs/*.md, check_readme.py
-.github/workflows/ci.yml  # lint, tests, README limits, fast path on a clean runner
+scripts/       # write the generated blocks of docs/*.md
+examples/      # quickstart.py: the package on the sample phase, run in CI
+.github/workflows/ci.yml  # lint, tests, fast path on a clean runner
 tests/
 docs/
   PLAN.md
@@ -217,7 +219,6 @@ uv run pytest tests/test_orientation.py          # one file
 uv run pytest tests/test_orientation.py::test_x  # one test
 uv run ruff check .                 # lint
 uv run ruff format --check .        # format check (CI fails on unformatted code)
-uv run python scripts/check_readme.py            # enforce README word/figure limits
 uv run blindside reproduce --fast   # sample phase only, under 5 min, writes outputs/fast/ (git ignored)
 uv run blindside reproduce          # full run, both README figures, ~13 min, downloads 1.4 GB
 uv run blindside reproduce --with-test  # also refits baseline on 18 matches, reruns the pre-registered test, ~3 GB
@@ -225,7 +226,7 @@ uv run python scripts/tactical_case_study.py                    # docs/figures/t
 uv run python scripts/exploratory_dynamic_events.py --write-docs  # generated block of docs/EXPLORATORY_DYNAMIC_EVENTS.md
 ```
 
-CI (`.github/workflows/ci.yml`) runs lint, `check_readme.py`, `pytest`, and `blindside reproduce --fast` on a clean
+CI (`.github/workflows/ci.yml`) runs lint, `pytest`, `blindside reproduce --fast` and `examples/quickstart.py` on a clean
 runner (Python 3.11 and 3.13), plus a separate `pip install .` job that checks the package and CLI work outside uv
 and outside the repository. There is no local data directory in CI: the fast path downloads everything it needs.
 

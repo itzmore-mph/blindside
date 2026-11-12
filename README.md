@@ -84,7 +84,8 @@ for bound in ("lower", "upper"):
     print(f"p_blind_side, {bound} bound: {p[0]:.2f}")  # 1.00 and 0.73
 ```
 
-`build_orientation_table(path, match_id)` turns a pose file into angles with both bounds per player and frame.
+[examples/quickstart.py](examples/quickstart.py) runs the package on a pose file: angles with both bounds,
+then `p_blind_side`.
 
 ## Reproduce
 
