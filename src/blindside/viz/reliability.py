@@ -10,6 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
+from matplotlib.collections import QuadMesh
 from matplotlib.figure import Figure
 from mplsoccer import Pitch
 
@@ -72,7 +73,7 @@ def _draw_zone_map(
     vmax: float | None = None,
     camera_side: str | None = "-y",
     pitch_size: tuple[float, float] = STANDARD_PITCH,
-):
+) -> QuadMesh:
     """Zone values under the pitch markings. Returns the mesh for a colour bar."""
     length, width = pitch_size
     pad = CAMERA_MARKER_OFFSET + 4.0

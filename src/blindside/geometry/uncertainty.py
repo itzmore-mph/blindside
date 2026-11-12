@@ -21,7 +21,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from blindside.geometry.circular import circular_mean, circular_std, wrap_angle
-from blindside.geometry.orientation import FACING_ROTATION
+from blindside.geometry.orientation import FACING_ROTATION, MIN_LENGTH_M
 
 FloatArray = NDArray[np.floating]
 
@@ -46,7 +46,25 @@ BOUND_CORRELATION: dict[str, dict[str, float]] = {
 
 
 def bound_correlation(segment: str, bound: str) -> float:
-    """Left/right error correlation of a segment under the ``"lower"`` or ``"upper"`` bound."""
+    """Left/right error correlation of a segment under one bound of the angular uncertainty.
+
+    Parameters
+    ----------
+    segment
+        ``"torso"``, ``"hips"`` or ``"head"``.
+    bound
+        ``"upper"`` (independent joint errors, correlation 0) or ``"lower"`` (the correlation
+        at which the Monte Carlo SD equals the frame-to-frame jitter of the angle).
+
+    Returns
+    -------
+    The correlation to pass to :func:`sample_facing_angles` or :func:`facing_uncertainty`.
+
+    Raises
+    ------
+    ValueError
+        For an unknown segment or bound.
+    """
     if bound not in BOUND_CORRELATION:
         raise ValueError(f"bound must be one of {sorted(BOUND_CORRELATION)}, got {bound!r}")
     if segment not in BOUND_CORRELATION[bound]:
@@ -63,10 +81,16 @@ class AngularEstimate:
 
 
 def sigma_from_p90(p90_cm: ArrayLike, p90_to_sigma: float = P90_TO_SIGMA) -> FloatArray:
-    """Per-axis standard deviation in metres from a 90% error radius in centimetres."""
-    if p90_to_sigma <= 0:
+    """Per-axis standard deviation in metres from a 90% error radius in centimetres.
+
+    A radius that is negative or not finite is not a valid error and gives NaN, which
+    propagates into NaN angles instead of a silently wrong uncertainty.
+    """
+    if not p90_to_sigma > 0:
         raise ValueError("p90_to_sigma must be positive")
-    return np.asarray(p90_cm, dtype=float) / 100.0 / p90_to_sigma
+    p90_cm = np.asarray(p90_cm, dtype=float)
+    valid = np.isfinite(p90_cm) & (p90_cm >= 0.0)
+    return np.where(valid, p90_cm, np.nan) / 100.0 / p90_to_sigma
 
 
 def difference_sigma(
@@ -107,7 +131,9 @@ def sample_vector_angles(
 
     Returns
     -------
-    Array of shape ``(n_samples, ...)`` with angles in (-pi, pi]. NaN inputs give NaN.
+    Array of shape ``(n_samples, ...)`` with angles in (-pi, pi]. NaN inputs give NaN, and
+    so does a vector shorter than :data:`blindside.geometry.orientation.MIN_LENGTH_M`:
+    its direction is undefined, as in :func:`blindside.geometry.orientation.vector_angle`.
     """
     if n_samples < 1:
         raise ValueError("n_samples must be at least 1")
@@ -117,7 +143,9 @@ def sample_vector_angles(
     noise = rng.standard_normal((n_samples, *vector_xy.shape), dtype=np.float32)
     noise *= sigma[..., None].astype(np.float32)
     noise += vector_xy.astype(np.float32)
-    return np.arctan2(noise[..., 1], noise[..., 0]).astype(float)
+    angles = np.arctan2(noise[..., 1], noise[..., 0]).astype(float)
+    degenerate = np.hypot(vector_xy[..., 0], vector_xy[..., 1]) < MIN_LENGTH_M
+    return np.where(degenerate, np.nan, angles)
 
 
 def sample_facing_angles(
@@ -133,7 +161,14 @@ def sample_facing_angles(
 ) -> FloatArray:
     """Monte Carlo samples of the facing angle of a left-right joint pair.
 
-    Returns an array of shape ``(n_samples, ...)``. See :func:`facing_uncertainty`.
+    Parameters are those of :func:`facing_uncertainty`. Pass a seeded ``rng`` for
+    reproducible samples: without one a fresh unseeded generator is used.
+
+    Returns
+    -------
+    Array of shape ``(n_samples, ...)`` with angles in (-pi, pi]. A pose is NaN in every
+    sample where a joint position is NaN, where a ``p90_mae_cm`` is NaN, negative or not
+    finite, or where the two joints coincide.
     """
     left_xy = np.asarray(left_xy, dtype=float)
     right_xy = np.asarray(right_xy, dtype=float)
@@ -189,7 +224,8 @@ def facing_uncertainty(
         Assumed correlation between the errors of the two joints, default 0 (independence).
         Independence overstates the angular noise if the true correlation is positive.
     rng
-        Random generator, pass a seeded one for reproducible output.
+        Random generator, pass a seeded one for reproducible output. A fresh unseeded
+        generator is used when omitted.
 
     Returns
     -------

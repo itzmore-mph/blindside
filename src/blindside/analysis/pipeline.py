@@ -424,7 +424,7 @@ def compute(train: pd.DataFrame, test: pd.DataFrame, poses: pd.DataFrame) -> dic
 
     def features_for(
         bound: str, half_angle: float = FOV_HALF_ANGLE_DEG, factor: float = P90_TO_SIGMA
-    ):
+    ) -> pd.DataFrame:
         return pose_feature_table(
             test, poses, bound=bound, half_angle_deg=half_angle, p90_to_sigma=factor
         )
@@ -512,7 +512,9 @@ def compute(train: pd.DataFrame, test: pd.DataFrame, poses: pd.DataFrame) -> dic
     # Robustness checks.
     checks: list[dict[str, object]] = []
 
-    def add(label: str, variant: str, bound: str, oof: OutOfFold, mask=None) -> None:
+    def add(
+        label: str, variant: str, bound: str, oof: OutOfFold, mask: np.ndarray | None = None
+    ) -> None:
         checks.append(comparison_row(label, variant, bound, y, oof, weights, mask))
 
     print("robustness checks ...", flush=True)

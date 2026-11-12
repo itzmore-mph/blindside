@@ -245,6 +245,6 @@ Status: engineering done on 11 Nov, manual tasks open.
 - README: 900 words by the conservative count of `scripts/check_readme.py`, two figures, no table.
 - Not yet verified: the GitHub Actions workflow has not run, the branch is not pushed.
 
-Manual tasks for Moritz: review the README draft, add the video link to it, record the one-minute video (script: problem 10 s, pose against XY by carrier speed 20 s,
+Manual tasks for Moritz: review the README draft, add the video link to it, record the video (at most three minutes since the rules update of 11 Nov, it must cover what, why, how, implications and open-source potential, and the README must match it. Draft script for the first minute: problem 10 s, pose against XY by carrier speed 20 s,
 the null result and its resolution 15 s, rerun and reuse 15 s), upload to YouTube,
 make the repo public, submit on Pretalx on 17 Dec.

@@ -97,6 +97,53 @@ def test_blind_side_probability_undefined_inputs():
         blind_side_probability(samples, np.zeros((2, 2)), presser, 180.0)
 
 
+def test_blind_side_probability_rejects_an_empty_sample_axis():
+    with pytest.raises(ValueError, match="at least one sample"):
+        blind_side_probability(np.zeros((0, 1)), np.zeros((1, 2)), np.ones((1, 2)))
+    for half_angle in (0.0, -10.0, 180.0, np.nan):
+        with pytest.raises(ValueError):
+            blind_side_probability(_samples(0.0), np.zeros((1, 2)), np.ones((1, 2)), half_angle)
+
+
+def test_blind_side_probability_accepts_lists_and_a_single_engagement():
+    # Lists as in the README example, and one engagement without the leading axis.
+    behind = blind_side_probability([[0.0], [0.0]], [[0.0, 0.0]], [[-1.0, 0.0]])
+    assert behind.shape == (1,) and behind[0] == 1.0
+    single = blind_side_probability(np.zeros(200), [0.0, 0.0], [-1.0, 0.0])
+    assert single.shape == () and single == 1.0
+    assert np.isnan(blind_side_probability(np.zeros(200), [0.0, 0.0], [0.0, 0.0]))
+
+
+def test_blind_side_probability_ignores_how_the_angles_are_wrapped():
+    presser = np.array([[np.cos(np.radians(120.0)), np.sin(np.radians(120.0))]])
+    reference = blind_side_probability(_samples(0.0), np.zeros((1, 2)), presser)[0]
+    for turns in (-2, -1, 1, 3):
+        shifted = _samples(0.0) + turns * 2.0 * np.pi
+        assert blind_side_probability(shifted, np.zeros((1, 2)), presser)[0] == reference
+    # A presser straight ahead of a carrier facing 180 degrees, given as +pi or as -pi.
+    ahead = np.array([[-1.0, 0.0]])
+    for facing in (np.pi, -np.pi):
+        assert blind_side_probability(np.full((50, 1), facing), np.zeros((1, 2)), ahead)[0] == 0.0
+
+
+def test_degenerate_carrier_joints_give_nan_features():
+    engagements, poses = _scene(0.0, 180.0)
+    carrier = poses["player_id"] == CARRIER
+    poses.loc[carrier, ["rEar_x", "rEar_y"]] = poses.loc[carrier, ["lEar_x", "lEar_y"]].to_numpy()
+    for bound in ("lower", "upper"):
+        out = pose_feature_table(engagements, poses, bound=bound)
+        # The ears coincide: the head has no direction. The torso is unaffected.
+        assert np.isnan(out["p_blind_side_head"].iloc[0])
+        assert np.isnan(out["carrier_head_sd_deg"].iloc[0])
+        assert out["p_blind_side_torso"].iloc[0] == 1.0
+
+
+def test_empty_engagement_table_gives_an_empty_feature_table():
+    engagements, poses = _scene(0.0, 180.0)
+    out = pose_feature_table(engagements.iloc[:0], poses)
+    assert len(out) == 0 and set(POSE_FEATURES) <= set(out.columns)
+
+
 def test_presser_alignment():
     carrier = np.array([[4.0, 0.0]] * 3)
     presser = np.zeros((3, 2))

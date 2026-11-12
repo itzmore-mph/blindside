@@ -120,6 +120,85 @@ def test_noise_larger_than_the_baseline_gives_a_uniform_direction() -> None:
     assert estimate.std / DEG > 100.0
 
 
+def test_coincident_joints_have_no_direction() -> None:
+    # facing_angle returns NaN for coincident joints. The samples must not invent a direction:
+    # without the guard they are uniform on the circle, or exactly 90 degrees at zero error.
+    same = [[1.0, 2.0], [0.0, 0.2]]
+    other = [[1.0, 2.0], [0.0, -0.2]]
+    for p90 in (0.0, 6.0):
+        samples = sample_facing_angles(same, other, p90, p90, rng=np.random.default_rng(0))
+        assert np.isnan(samples[:, 0]).all() and not np.isnan(samples[:, 1]).any()
+    estimate = facing_uncertainty(same, other, 6.0, 6.0, rng=np.random.default_rng(0))
+    assert np.isnan(estimate.mean[0]) and np.isnan(estimate.std[0])
+    assert np.isnan(sample_vector_angles([0.0, 0.0], 0.01, n_samples=5)).all()
+
+
+def test_missing_joint_coordinates_give_nan_for_that_pose_only() -> None:
+    left = [[np.nan, 0.2], [0.0, 0.2], [0.0, 0.2]]
+    right = [[0.0, -0.2], [0.0, np.nan], [0.0, -0.2]]
+    samples = sample_facing_angles(left, right, 6.0, 6.0, rng=np.random.default_rng(0))
+    np.testing.assert_array_equal(np.isnan(samples).all(axis=0), [True, True, False])
+    np.testing.assert_array_equal(np.isnan(samples).any(axis=0), [True, True, False])
+
+
+def test_invalid_p90_values_give_nan() -> None:
+    np.testing.assert_array_equal(
+        np.isnan(sigma_from_p90([-1.0, np.nan, np.inf, 0.0, 5.0])), [True, True, True, False, False]
+    )
+    args = ([[0.0, 0.2]] * 4, [[0.0, -0.2]] * 4, [-6.0, np.nan, np.inf, 6.0], 6.0)
+    for correlation in (0.0, 0.9):
+        samples = sample_facing_angles(*args, correlation=correlation, rng=np.random.default_rng(0))
+        np.testing.assert_array_equal(np.isnan(samples).all(axis=0), [True, True, True, False])
+    with pytest.raises(ValueError):
+        sigma_from_p90(5.0, p90_to_sigma=np.nan)
+
+
+def test_extreme_p90_values() -> None:
+    left, right = [0.0, 0.09], [0.0, -0.09]
+    # No error: every sample is the point estimate.
+    exact = sample_facing_angles(left, right, 0.0, 0.0, rng=np.random.default_rng(0))
+    np.testing.assert_allclose(exact, 0.0, atol=1e-6)
+    # An error far larger than the ear width: the direction is unknown, never NaN.
+    huge = facing_uncertainty(left, right, 1e4, 1e4, n_samples=20_000, rng=np.random.default_rng(0))
+    assert np.isfinite(huge.std) and huge.std / DEG > 100.0
+    # The uncertainty grows monotonically with the published error.
+    stds = [
+        facing_uncertainty(left, right, p, p, n_samples=20_000, rng=np.random.default_rng(1)).std
+        for p in (1.0, 3.0, 6.0, 12.0, 24.0)
+    ]
+    assert np.all(np.diff(stds) > 0)
+
+
+@pytest.mark.parametrize("facing_deg", [180.0, -180.0, 179.9, -179.9, 540.0])
+def test_samples_stay_wrapped_and_concentrated_across_the_wrap(facing_deg: float) -> None:
+    joints = make_skeleton(facing_deg * DEG)
+    samples = sample_facing_angles(
+        joints["lShoulder"], joints["rShoulder"], 5.6, 5.6, n_samples=2000,
+        rng=np.random.default_rng(0),
+    )  # fmt: skip
+    assert np.all(samples > -np.pi) and np.all(samples <= np.pi)
+    # Samples fall on both sides of the wrap, and the circular summary is not disturbed.
+    assert (samples > 0).any() and (samples < 0).any()
+    estimate = facing_uncertainty(
+        joints["lShoulder"], joints["rShoulder"], 5.6, 5.6, n_samples=2000,
+        rng=np.random.default_rng(0),
+    )  # fmt: skip
+    assert abs(angular_difference(estimate.mean, np.pi)) < 1.0 * DEG
+    assert estimate.std / DEG == pytest.approx(4.9, abs=0.4)
+
+
+def test_sample_facing_angles_is_deterministic_only_with_a_seed() -> None:
+    args = ([0.0, 0.1], [0.0, -0.1], 7.0, 7.0)
+    a = sample_facing_angles(*args, rng=np.random.default_rng(7))
+    b = sample_facing_angles(*args, rng=np.random.default_rng(7))
+    np.testing.assert_array_equal(a, b)
+    assert not np.array_equal(sample_facing_angles(*args), sample_facing_angles(*args))
+    # One generator, two calls: the stream advances, so the second draw differs.
+    rng = np.random.default_rng(7)
+    np.testing.assert_array_equal(sample_facing_angles(*args, rng=rng), a)
+    assert not np.array_equal(sample_facing_angles(*args, rng=rng), a)
+
+
 def test_nan_and_argument_checks() -> None:
     samples = sample_vector_angles([[np.nan, 0.0], [1.0, 0.0]], 0.01, n_samples=10)
     assert np.isnan(samples[:, 0]).all() and not np.isnan(samples[:, 1]).any()
