@@ -1,5 +1,5 @@
 {
-  "description": "Size and sha256 of the non-LFS files of github.com/SkillCorner/opendata (MIT) that the package reads: dynamic events, match metadata and the committed body pose sample phase. Computed from a clone at the pinned commit. The files are fetched from raw.githubusercontent.com when no local clone is found.",
+  "description": "Size and sha256 of the non-LFS files of github.com/SkillCorner/opendata (MIT) that the package reads: dynamic events, match metadata, the phases of play of the two pose matches and the committed body pose sample phase. Computed from a clone at the pinned commit. The files are fetched from raw.githubusercontent.com when no local clone is found.",
   "repository": "SkillCorner/opendata",
   "commit": "4340d274572876239c154c90bc507a9b3250a656",
   "base_url": "https://raw.githubusercontent.com/SkillCorner/opendata/4340d274572876239c154c90bc507a9b3250a656",
@@ -40,6 +40,10 @@
       "size_bytes": 28396,
       "sha256": "f4345b32c0fdd7c9990df70050b3a74f57b1992cf762e20f2a4d309bd2fba7d2"
     },
+    "data/matches/1925299/1925299_phases_of_play.csv": {
+      "size_bytes": 131104,
+      "sha256": "a1682a736a9cf1c311cb799f0a949f7e023dca4ebaa9dd294b138e8929271274"
+    },
     "data/matches/1927964/1927964_dynamic_events.csv": {
       "size_bytes": 5509112,
       "sha256": "638747f76b43690974f95958952dfe62c9e50d64648f9456f43f66d5d91201f3"
@@ -79,6 +83,10 @@
     "data/matches/1996435/1996435_match.json": {
       "size_bytes": 27830,
       "sha256": "f54179645d3c3f308a7094086283277f2a7c99da5f3919302e622cbd82f9d065"
+    },
+    "data/matches/1996435/1996435_phases_of_play.csv": {
+      "size_bytes": 120335,
+      "sha256": "ff7ed406c900ad98bd48b6b9913e088c40bf176a3915f061430c1af7405ccb09"
     },
     "data/matches/1996436/1996436_dynamic_events.csv": {
       "size_bytes": 3760511,

@@ -65,9 +65,8 @@ Judging, 20% each: Relevance, Methodology, Originality, Communication, Open-sour
 
 Consequences for how we build:
 - The README is the submission. Every analysis must earn a place in 1000 words and two figures. Everything else goes to `docs/`.
-- README figure 1: the reliability composite (candidate, `docs/figures/reliability_composite.png`).
+- README figure 1: the reliability composite (`docs/figures/reliability_composite.png`).
   README figure 2 (`docs/figures/proxy_agreement.png`): Cohen's kappa of the XY proxy against the pose label by carrier speed band, plus the share of engagements called blind by each label (pose head, pose torso, XY proxy). No outcome in it.
-  It replaces the earlier candidate, possession loss per bin of `p_blind_side`.
 - One command reproduces both README figures from a clean clone: `uv run blindside reproduce`. It needs the two pose matches only
   (1.4 GB download). `--with-test` also refits the baseline on the other 18 matches and reruns the pre-registered comparison.
 - `uv run blindside reproduce --fast` runs on the sample phase and must finish in under five minutes. The sample holds two engagements,
@@ -173,7 +172,7 @@ Consequences for how we build:
 ## Engineering conventions
 
 - Python 3.11+, managed with `uv`. All dependencies in `pyproject.toml`.
-- Package code in `src/blindside/`, tests in `tests/`, notebooks only for presentation.
+- Package code in `src/blindside/`, tests in `tests/`.
 - Use polars or pandas consistently (default: pandas, pyarrow backend). Cache intermediate tables as parquet in `data/cache/` (git ignored).
 - Stream the large pose JSON files. Never load a full 3.3 GB file into memory.
 - Type hints, docstrings, `ruff` for linting, `pytest` for tests. Every geometric function gets a unit test with a synthetic skeleton.
@@ -204,7 +203,7 @@ docs/
   RELIABILITY.md
   BASELINE.md
   INCREMENTAL.md
-notebooks/     # optional walkthrough, not part of the judged submission
+  EXPLORATORY_DYNAMIC_EVENTS.md   # not pre-registered: possession labels, defending phases, pitch case study, XY helper
 README.md      # the judged document: max 1000 words, max two figures or tables
 LICENSE.md
 ```
@@ -222,6 +221,8 @@ uv run python scripts/check_readme.py            # enforce README word/figure li
 uv run blindside reproduce --fast   # sample phase only, under 5 min, writes outputs/fast/ (git ignored)
 uv run blindside reproduce          # full run, both README figures, ~13 min, downloads 1.4 GB
 uv run blindside reproduce --with-test  # also refits baseline on 18 matches, reruns the pre-registered test, ~3 GB
+uv run python scripts/tactical_case_study.py                    # docs/figures/tactical_case_study.png (video, not README)
+uv run python scripts/exploratory_dynamic_events.py --write-docs  # generated block of docs/EXPLORATORY_DYNAMIC_EVENTS.md
 ```
 
 CI (`.github/workflows/ci.yml`) runs lint, `check_readme.py`, `pytest`, and `blindside reproduce --fast` on a clean
@@ -250,6 +251,11 @@ regenerated figures never diverge. Rough data flow for `blindside reproduce`:
    implements the exploratory XY-proxy-versus-pose-label kappa behind figure 2 (`viz/agreement.py`).
 6. `cli.py` orchestrates steps 1 to 5 end to end for `reproduce`/`reproduce --fast`/`reproduce --with-test`; the
    `scripts/` files call the same `pipeline.py` functions to regenerate the numbers embedded in `docs/*.md`.
+
+Outside the judged path (added 12 November 2026, all exploratory): `features/xy_proxy.py` (`xy_blind_side_proxy`,
+`classify_xy_reliability`: unreliable below 2 m/s, reliable from 4 m/s, for matches without pose),
+`analysis/dynamic_events.py` and `analysis/case_study.py` with `viz/case_study.py`. The README is organised by the four
+video pillars: what we did, why, how, implications. The case study figure says "the labels disagree", never "XY is wrong".
 
 When changing a geometry or feature function, check both call sites (a `scripts/` file and `cli.py`/`pipeline.py`)
 so the README figures and the `docs/` write-ups stay consistent.

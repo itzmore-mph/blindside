@@ -41,6 +41,11 @@ def metadata_relative(match_id: int) -> str:
     return f"data/matches/{match_id}/{match_id}_match.json"
 
 
+def phases_relative(match_id: int) -> str:
+    """Repository path of the phases of play of one match."""
+    return f"data/matches/{match_id}/{match_id}_phases_of_play.csv"
+
+
 def opendata_file(relative: str, root: Path | str | None = None) -> Path:
     """Return a local path of one opendata file, downloading it if no clone has it.
 

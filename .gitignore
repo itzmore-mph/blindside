@@ -186,3 +186,6 @@ cython_debug/
 
 # figures of `blindside reproduce --fast`
 /outputs/
+
+# local Claude Code settings
+/.claude/

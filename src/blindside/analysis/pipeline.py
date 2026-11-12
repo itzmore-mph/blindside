@@ -77,6 +77,7 @@ from blindside.features.xy_baseline import (
     baseline_table,
     design_frame,
 )
+from blindside.features.xy_proxy import xy_blind_side_proxy
 from blindside.geometry.uncertainty import P90_TO_SIGMA
 
 USABLE_SD_DEG = 20.0
@@ -392,7 +393,7 @@ def proxy_agreement(
     """
     heading = test["approach_angle_heading_deg"].to_numpy(dtype=float)
     speed = test["carrier_speed"].to_numpy(dtype=float)
-    proxy = heading > FOV_HALF_ANGLE_DEG
+    proxy = xy_blind_side_proxy(heading, FOV_HALF_ANGLE_DEG)
     band = np.digitize(speed, SPEED_EDGES[1:-1])
     bands = {label: band == k for k, label in enumerate(speed_band_labels(SPEED_EDGES))}
     tables = []

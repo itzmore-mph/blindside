@@ -13,6 +13,8 @@ Orientation with uncertainty
     :class:`OrientationConfig`
 Blind-side pressure
     :func:`blind_side_probability`, :func:`pose_feature_table`
+Blind-side labels without body pose
+    :func:`xy_blind_side_proxy`, :func:`classify_xy_reliability`
 Agreement of two labels
     :func:`cohen_kappa`, :func:`agreement_table`, :func:`cluster_bootstrap_weights`
 """
@@ -41,6 +43,8 @@ _EXPORTS: dict[str, str] = {
     "cached_orientation_table": "blindside.features.orientation_table",
     "blind_side_probability": "blindside.features.pose_features",
     "pose_feature_table": "blindside.features.pose_features",
+    "classify_xy_reliability": "blindside.features.xy_proxy",
+    "xy_blind_side_proxy": "blindside.features.xy_proxy",
     "cohen_kappa": "blindside.analysis.agreement",
     "agreement_table": "blindside.analysis.agreement",
     "cluster_bootstrap_weights": "blindside.analysis.baseline",

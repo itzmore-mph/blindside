@@ -5,12 +5,12 @@ Budget assumption: 8 to 10 hours per week, about 45 to 50 hours in total.
 
 | Phase | Dates | Hours | Gate |
 |---|---|---|---|
-| 0 Feasibility | 10 to 15 Nov | 3 | Passed on 10 Nov: 1,879 of 1,961 engagements have pose for both players (docs/FEASIBILITY.md section 7). Manual tasks still open |
+| 0 Feasibility | 10 to 15 Nov | 3 | Passed on 10 Nov: 1,879 of 1,961 engagements have pose for both players (docs/FEASIBILITY.md section 7) |
 | 1 Orientation and uncertainty | 16 to 22 Nov | 10 | Passed on 10 Nov: 100 tests green, velocity check plotted (docs/FEASIBILITY.md section 9) |
 | 2 Reliability map | 23 to 29 Nov | 8 | Passed on 10 Nov: composite figure `docs/figures/reliability_composite.png`, findings in docs/RELIABILITY.md section 3 |
 | 3 Engagements and baseline | 30 Nov to 6 Dec | 10 | Passed on 10 Nov: pre-registration committed (fe7ad6e), XY baseline scored (docs/BASELINE.md) |
 | 4 Incremental value | 7 to 11 Dec | 6 | Passed on 11 Nov: no detectable increment, log loss difference minus 0.0002 under both bounds, 95% intervals within minus 0.0004 to 0.0000 (docs/INCREMENTAL.md) |
-| 5 Packaging | 12 to 16 Dec | 8 | Engineering passed on 11 Nov: clean-clone run reproduces both README figures byte-identically, README drafted. Video and submission open (manual tasks) |
+| 5 Packaging | 12 to 16 Dec | 8 | Engineering passed on 11 Nov: clean-clone run reproduces both README figures byte-identically, README final on 12 Nov. Video and submission open |
 | Buffer | 17 to 18 Dec | 0 | Submit on 17 Dec |
 
 Cut rule: if phase 0 or phase 3 shows too few usable engagements, drop phase 4 and submit deliverables 1 and 2
@@ -28,10 +28,6 @@ Manual tasks for Moritz, status on 10 November 2026:
 - Discord question 3, figures inside the video: **not confirmed.** The two-figure limit is stated for the README only.
 - AI assistance: **treated as allowed, not explicitly confirmed.** The rules do not address it and Moritz found nothing to the contrary on Discord.
   It is disclosed through the commit trailer.
-- Employer permissions (side-activity and IP clauses): **settled.** Checked by Moritz on 10 November 2026: no clause applies.
-  The project is done in private time on private equipment, with open data only. The rules make the participant responsible for employer permissions.
-- Paris on 17 February 2027 in person: **feasible**, with annual leave. Remote talks are not accepted.
-- Solo or pair: **solo.**
 
 Status: done. Schema, event structure, joint error, the sample-based checks and the full-match coverage count
 are in docs/FEASIBILITY.md. Result: go, the cut rule does not apply.
@@ -124,7 +120,7 @@ The orientation table carries `{segment}_sd_deg` (upper) and `{segment}_sd_low_d
 Status of the main task: done on 10 Nov, docs/RELIABILITY.md sections 2 and 3, `scripts/reliability_map.py`.
 Usable share at 20 degrees under the upper bound: torso 99.2%, hips 93.7%, head 87.3% (72 to 93% across sigma factors), above 99.8% under the lower bound.
 The published joint error is flat across the pitch while the jitter rises by up to 55% towards the far touchline.
-XY to pose offset: median 6.8 cm. The composite figure is the candidate for README figure 1.
+XY to pose offset: median 6.8 cm. The composite figure is README figure 1.
 
 Open points carried into Phase 3:
 - `../opendata` holds the tracking files as Git LFS pointers and `git lfs` is not installed. The XY baseline features
@@ -189,17 +185,15 @@ Exploratory addition on 11 Nov, no outcome used (docs/INCREMENTAL.md section 1.1
 The proxy calls 45.5% of engagements blind, head pose 20.5%. Cohen's kappa is 0.28 (0.24 to 0.31) overall and rises with
 carrier speed from 0.09 below 2 m/s to 0.58 above 6 m/s (torso label: 0.10 to 0.77). This became the lead of the submission.
 
-Open points carried into Phase 5:
-- README figure 2 is not drawn yet. Decided on 11 Nov: Cohen's kappa of the XY proxy against the pose label by carrier speed
-  band, plus the share of engagements called blind by each label (docs/INCREMENTAL.md section 1.10). It replaces the earlier
-  candidate, possession loss per bin of `p_blind_side_head` (section 1.6), which stays in docs/.
+Points carried into Phase 5, all closed there:
+- README figure 2: Cohen's kappa of the XY proxy against the pose label by carrier speed band, plus the share of engagements
+  called blind by each label (docs/INCREMENTAL.md section 1.10). Possession loss per bin of `p_blind_side_head` (section 1.6)
+  stays in docs/.
 - The README leads with who counts as pressed from the blind side (pose against the XY proxy, by carrier speed), reports the
   pre-registered null plainly with its interval and resolution, and presents the frozen design as ready to rerun on more matches.
   The reliability work is what makes it credible.
-- Figure 2 needs the engagements of both pose matches. The fast path runs on one sample phase of 12.3 s and cannot compute it.
-  Open decision for Phase 5: what `blindside reproduce --fast` draws for figure 2. No derived data table may be committed.
-- `load_tables` and `inclusion_flow` live in `scripts/xy_baseline.py` and are imported by `scripts/incremental_value.py`.
-  Move them into the package when the CLI is built.
+- Figure 2 needs the engagements of both pose matches, so the fast path draws stamped stand-ins (see Phase 5).
+- `load_tables` and `inclusion_flow` moved into `blindside.analysis.pipeline`.
 
 ## Phase 5: Packaging
 
@@ -230,7 +224,7 @@ Add LICENSE.md (MIT). Add a GitHub Actions workflow that runs tests and the fast
 Then run a clean-clone test in a fresh directory on a machine state without caches and fix everything that breaks.
 ```
 
-Status: engineering done on 11 Nov, manual tasks open.
+Status: done on 12 Nov. Only the video and the submission are open.
 - Decisions by Moritz on 11 Nov: `reproduce --fast` writes stamped stand-ins to `outputs/fast/` (the reliability composite on the
   sample and a geometry panel of its two engagements). The full `reproduce` draws both figures from the two pose matches,
   `--with-test` adds the baseline on 18 matches and the pre-registered comparison.
@@ -242,9 +236,12 @@ Status: engineering done on 11 Nov, manual tasks open.
   cached full-match tables or a local sample), `reproduce --fast` takes 50 s including a 97 MB download, `reproduce` takes
   13 minutes including 1.4 GB of downloads (orientation tables 107 and 110 s). Both figures are byte-identical to the committed ones.
   `reproduce --with-test` on the cached data takes 170 s and prints minus 0.0002 (minus 0.0004 to 0.0000) under both bounds.
-- README: 900 words by the conservative count of `scripts/check_readme.py`, two figures, no table.
-- Not yet verified: the GitHub Actions workflow has not run, the branch is not pushed.
+- 12 Nov, after the rules update (video up to three minutes, README aligned with it): the README follows the four parts of the
+  video (what, why, how, implications and reuse). 998 words by the conservative count of `scripts/check_readme.py`,
+  two figures, no table.
+- 12 Nov, exploratory and outside the judged path: `classify_xy_reliability` for matches without body pose, a pitch case study
+  for the video and `p_blind_side` against possession labels and defending phases (docs/EXPLORATORY_DYNAMIC_EVENTS.md).
+- The repository is public.
 
-Manual tasks for Moritz: review the README draft, add the video link to it, record the video (at most three minutes since the rules update of 11 Nov, it must cover what, why, how, implications and open-source potential, and the README must match it. Draft script for the first minute: problem 10 s, pose against XY by carrier speed 20 s,
-the null result and its resolution 15 s, rerun and reuse 15 s), upload to YouTube,
-make the repo public, submit on Pretalx on 17 Dec.
+Open: record the video (at most three minutes, covering what, why, how, implications and open-source potential, in the order
+of the README), upload it to YouTube, add the link to the README and submit on Pretalx on 17 Dec.

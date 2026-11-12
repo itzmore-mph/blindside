@@ -306,7 +306,7 @@ Positive along the direction of travel means that the pose centroid is ahead of 
 
 ### 2.7 Composite figure
 
-`docs/figures/reliability_composite.png`, candidate for README figure 1.
+`docs/figures/reliability_composite.png`, README figure 1.
 
 ![Reliability of pose-derived orientation](figures/reliability_composite.png)
 <!-- reliability:end -->

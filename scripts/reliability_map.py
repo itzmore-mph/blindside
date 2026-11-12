@@ -277,7 +277,7 @@ def render(
     )
 
     add("### 2.7 Composite figure\n")
-    add(f"`{COMPOSITE}`, candidate for README figure 1.\n")
+    add(f"`{COMPOSITE}`, README figure 1.\n")
     add(f"![Reliability of pose-derived orientation](figures/{COMPOSITE.name})")
     return "\n".join(lines)
 
