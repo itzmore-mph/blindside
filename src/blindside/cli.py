@@ -6,6 +6,9 @@
 ``blindside reproduce --with-test``
     Also downloads the tracking of the other 18 matches (about 1.6 GB), refits the XY
     baseline and reruns the pre-registered comparison of docs/PREREGISTRATION.md.
+``blindside reproduce --with-scene``
+    Also draws one slow-carrier press on the pitch on which the two labels disagree
+    (``match_scene_cone.png``, not a README figure). Combines with ``--with-test``.
 ``blindside reproduce --fast``
     Runs the same code on the committed 12.3 s sample phase in under five minutes. The sample
     holds two engagements, so the figures it writes are stand-ins, stamped as such, and
@@ -32,6 +35,12 @@ if TYPE_CHECKING:
 
 FIGURE_1 = "reliability_composite.png"
 FIGURE_2 = "proxy_agreement.png"
+SCENE_FIGURE = "match_scene_cone.png"
+SCENE_CAPTION = (
+    "The clearest slow-carrier disagreement by a fixed rule that reads no outcome, not a "
+    "typical engagement.\nThe labels disagree. Without ground truth for orientation, the "
+    "drawing cannot show which label is right."
+)
 FAST_FIGURE_1 = "sample_reliability_composite.png"
 FAST_FIGURE_2 = "sample_engagement_geometry.png"
 DEFAULT_OUTPUT = Path("docs/figures")
@@ -95,8 +104,34 @@ def _test_lines(results: dict[str, object]) -> list[str]:
     return lines
 
 
-def reproduce_full(output_dir: Path, with_test: bool = False) -> None:
-    """Regenerate both README figures from the two pose matches."""
+def _save_scene(
+    test: pd.DataFrame, poses: pd.DataFrame, features: dict[str, pd.DataFrame], path: Path
+) -> None:
+    """Draw the clearest slow-carrier press on which the XY proxy and the head label disagree."""
+    from blindside.analysis.scene import scene_example
+    from blindside.features.pose_features import FOV_HALF_ANGLE_DEG
+    from blindside.viz.case_study import plot_scene_cone
+
+    scene = scene_example(test, poses, features)
+    figure = plot_scene_cone(
+        scene.geometry,
+        scene.others,
+        scene.pitch_dims,
+        scene.paths,
+        half_angle_deg=FOV_HALF_ANGLE_DEG,
+        caption=SCENE_CAPTION,
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(path, dpi=DPI, bbox_inches=None)
+    _say(f"wrote {path}")
+
+
+def reproduce_full(output_dir: Path, with_test: bool = False, with_scene: bool = False) -> None:
+    """Regenerate both README figures from the two pose matches.
+
+    ``with_test`` also reruns the pre-registered comparison, ``with_scene`` also draws
+    ``match_scene_cone.png``.
+    """
     from blindside.analysis.baseline import N_BOOTSTRAP, cluster_bootstrap_weights
     from blindside.analysis.pipeline import (
         attach_pose,
@@ -168,6 +203,10 @@ def reproduce_full(output_dir: Path, with_test: bool = False) -> None:
         "say which label is right."
     )
     _save(plot_proxy_agreement(agreement, caption=caption), output_dir / FIGURE_2)
+    if with_scene:
+        if with_test:
+            features = {bound: pose_feature_table(test, poses, bound=bound) for bound in BOUNDS}
+        _save_scene(test, poses, features, output_dir / SCENE_FIGURE)
     _say("")
     _say(flow.to_string(index=False))
     _say("")
@@ -280,6 +319,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="also refit the XY baseline on 18 matches and rerun the pre-registered test",
     )
     reproduce.add_argument(
+        "--with-scene",
+        action="store_true",
+        help=f"also draw one press on the pitch where the two labels disagree ({SCENE_FIGURE})",
+    )
+    reproduce.add_argument(
         "--output-dir",
         type=Path,
         default=None,
@@ -290,13 +334,20 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Entry point of the ``blindside`` command. Returns the exit code."""
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.fast and args.with_scene:
+        parser.error("--with-scene needs the full pose matches and cannot run with --fast")
     start = time.perf_counter()
     try:
         if args.fast:
             reproduce_fast(args.output_dir or FAST_OUTPUT)
         else:
-            reproduce_full(args.output_dir or DEFAULT_OUTPUT, with_test=args.with_test)
+            reproduce_full(
+                args.output_dir or DEFAULT_OUTPUT,
+                with_test=args.with_test,
+                with_scene=args.with_scene,
+            )
     except DownloadError as error:
         print(
             f"error: {error}\nCheck the network connection and run the command again. "

@@ -23,7 +23,8 @@ from blindside.analysis.pipeline import (
     inclusion_flow,
     load_test_table,
 )
-from blindside.data.events import load_dynamic_events, load_match_metadata
+from blindside.analysis.scene import other_players, source_line
+from blindside.data.events import load_match_metadata
 from blindside.data.tracking import cached_positions, position_grid
 from blindside.features.pose_features import BOUNDS, FOV_HALF_ANGLE_DEG, pose_feature_table
 from blindside.viz.case_study import plot_tactical_case_study
@@ -34,28 +35,6 @@ PANELS = {
     DISAGREE: "A  Slow carrier, {speed:.1f} m/s: the labels disagree",
     AGREE_BLIND: "B  Running carrier, {speed:.1f} m/s: the labels agree",
 }
-
-
-def other_players(row: pd.Series) -> pd.DataFrame:
-    """Everyone but presser and carrier at the engagement start, from the 10 fps tracking."""
-    match_id = int(row["match_id"])
-    grid = position_grid(cached_positions(match_id))
-    xy = grid.xy[int(grid.row(int(row["frame_start"])))].astype(float)
-    team_of = {int(p["id"]): int(p["team_id"]) for p in load_match_metadata(match_id)["players"]}
-    table = pd.DataFrame({"player_id": grid.players, "x": xy[:, 0], "y": xy[:, 1]})
-    table["pressing_team"] = table["player_id"].map(team_of) == int(row["presser_team_id"])
-    involved = table["player_id"].isin([int(row["presser_id"]), int(row["carrier_id"])])
-    return table[~involved & table["x"].notna()].reset_index(drop=True)
-
-
-def source_line(row: dict[str, object]) -> str:
-    """Teams, clock time and match id of one engagement."""
-    match_id = int(row["match_id"])
-    metadata = load_match_metadata(match_id)
-    events = load_dynamic_events(match_id, columns=["event_id", "time_start", "period"])
-    event = events.loc[events["event_id"] == row["event_id"]].iloc[0]
-    teams = f"{metadata['home_team']['short_name']} against {metadata['away_team']['short_name']}"
-    return f"{teams}, period {int(event['period'])} at {event['time_start']} (match {match_id})"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -81,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         engagement = chosen.iloc[0]
         geometry["match_id"], geometry["event_id"] = match_id, engagement["event_id"]
         geometry["title"] = title.format(speed=float(engagement["carrier_speed"]))
-        geometry["source"] = source_line(geometry)
+        geometry["source"] = source_line(match_id, str(engagement["event_id"]))
         print(
             f"  {geometry['source']}, event {engagement['event_id']}: proxy angle "
             f"{geometry['approach_angle_heading_deg']:.0f} deg, p_blind_side_head "

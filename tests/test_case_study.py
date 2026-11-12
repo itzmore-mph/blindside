@@ -6,7 +6,7 @@ import pytest
 from matplotlib.patches import Wedge
 
 from blindside.analysis.case_study import AGREE_BLIND, DISAGREE, case_study_candidates
-from blindside.viz.case_study import plot_tactical_case_study
+from blindside.viz.case_study import plot_scene_cone, plot_tactical_case_study
 
 
 def _engagements() -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
@@ -87,3 +87,31 @@ def test_inputs_must_match_the_panels():
         plot_tactical_case_study(_panels(), [None], [(105.0, 68.0)] * 2)
     with pytest.raises(ValueError, match="one entry per panel"):
         plot_tactical_case_study(_panels().iloc[:0], [], [])
+
+
+def test_scene_cone_draws_the_runs_and_the_exact_values():
+    row = _panels().iloc[0].copy()
+    row["p_torso_lower"], row["p_torso_upper"] = 0.0, 0.05
+    row["presser_off_head_deg"] = 3.0
+    path = np.column_stack([np.linspace(16.0, 13.0, 21), np.linspace(4.0, -1.0, 21)])
+    others = pd.DataFrame({"x": [8.0], "y": [0.0], "pressing_team": [True]})
+    figure = plot_scene_cone(row, others, (105.0, 68.0), {"presser": path})
+    axis = figure.axes[0]
+    assert sum(isinstance(patch, Wedge) for patch in axis.patches) == 6
+    # One run: the presser's. The carrier has no path and gets none.
+    runs = [line for line in axis.lines if len(line.get_xdata()) == len(path) + 1]
+    assert len(runs) == 1
+    text = "\n".join(t.get_text() for t in figure.texts)
+    assert "XY proxy: BLIND.  Head pose: IN VIEW." in text
+    assert "1.4 m/s" in text
+    assert "0.00 lower bound\n0.02 upper bound" in text
+    assert "0.00 lower bound\n0.05 upper bound" in text
+    assert "2.0 degrees lower bound\n12.0 degrees upper bound" in text
+    assert "3 degrees off the head facing" in text
+
+
+def test_scene_cone_works_without_paths_context_and_optional_values():
+    figure = plot_scene_cone(_panels().iloc[1], None, (105.0, 68.0))
+    text = "\n".join(t.get_text() for t in figure.texts)
+    assert "Head pose: BLIND." in text
+    assert "torso" not in text

@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 Project context for Claude Code. Read this file fully before any task.
 
 ## Project
@@ -8,6 +10,7 @@ Name: **blindside**. Blind-side pressing from broadcast body pose, with measurem
 
 Entry for the SkillCorner X PySport Analytics Cup 2.0 (football challenge).
 Submission deadline: 18 December 2026. Internal deadline: 16 December 2026.
+Finalists announced: 8 January 2027. Finals: 17 February 2027 (Europe, Paris), 24 February 2027 (US, Boston).
 
 ### Research question
 
@@ -74,6 +77,8 @@ Consequences for how we build:
   (git ignored), the reliability composite on the sample and a geometry panel of the two engagements, and never touches `docs/figures/`.
 - `README.md` limits (1000 words, two figures or tables) are not checked automatically: `scripts/check_readme.py` was removed on
   12 November 2026. Count by hand after every README edit (conservative count: every whitespace-separated token).
+  `tests/test_readme.py` does check that the README embeds exactly two images, that its relative links exist, and that its
+  one Python block prints `1.00` and `0.73`. Changing the snippet or adding an image fails the suite.
 - The package must be installable and reusable on its own (`pip install .`), with a documented public API,
   because the winner's grant funds conversion into a package or a pull request to an existing library.
 - Do not commit data or derived data tables.
@@ -193,9 +198,10 @@ src/blindside/
   features/    # engagement extraction, XY baseline features, pose features
   analysis/    # reliability map, incremental value test, pipeline.py (the steps shared by scripts and CLI)
   viz/         # plotting helpers
-  cli.py       # `blindside reproduce [--fast | --with-test]`
-scripts/       # write the generated blocks of docs/*.md
+  cli.py       # `blindside reproduce [--fast | --with-test] [--with-scene]`
+scripts/       # write the generated blocks of docs/*.md and the pitch figures outside the README
 examples/      # quickstart.py: the package on the sample phase, run in CI
+               # walkthrough.ipynb: the same on the sample phase, committed with outputs (jupyter is not a dependency)
 .github/workflows/ci.yml  # lint, tests, fast path on a clean runner
 tests/
 docs/
@@ -206,6 +212,7 @@ docs/
   BASELINE.md
   INCREMENTAL.md
   EXPLORATORY_DYNAMIC_EVENTS.md   # not pre-registered: possession labels, defending phases, pitch case study, XY helper
+  TACTICAL_INSIGHTS.md            # not pre-registered, descriptive: pressers, carriers, zones, sample size for a rerun
 README.md      # the judged document: max 1000 words, max two figures or tables
 LICENSE.md
 ```
@@ -222,7 +229,11 @@ uv run ruff format --check .        # format check (CI fails on unformatted code
 uv run blindside reproduce --fast   # sample phase only, under 5 min, writes outputs/fast/ (git ignored)
 uv run blindside reproduce          # full run, both README figures, ~13 min, downloads 1.4 GB
 uv run blindside reproduce --with-test  # also refits baseline on 18 matches, reruns the pre-registered test, ~3 GB
+uv run blindside reproduce --with-scene # also docs/figures/match_scene_cone.png (linked from the README, not embedded)
 uv run python scripts/tactical_case_study.py                    # docs/figures/tactical_case_study.png (video, not README)
+uv run python scripts/plot_scene_example.py                     # docs/figures/match_scene_cone.png on its own
+uv run python scripts/tactical_insights.py --write-docs         # generated block of docs/TACTICAL_INSIGHTS.md
+uv run --with nbconvert --with ipykernel jupyter nbconvert --to notebook --execute --inplace examples/walkthrough.ipynb
 uv run python scripts/exploratory_dynamic_events.py --write-docs  # generated block of docs/EXPLORATORY_DYNAMIC_EVENTS.md
 ```
 
@@ -250,7 +261,8 @@ regenerated figures never diverge. Rough data flow for `blindside reproduce`:
 5. **`analysis/baseline.py`** (fit, cluster bootstrap) and **`analysis/incremental.py`** (out-of-fold log loss,
    calibration, robustness checks) implement the frozen pre-registered comparison; **`analysis/agreement.py`**
    implements the exploratory XY-proxy-versus-pose-label kappa behind figure 2 (`viz/agreement.py`).
-6. `cli.py` orchestrates steps 1 to 5 end to end for `reproduce`/`reproduce --fast`/`reproduce --with-test`; the
+6. `cli.py` orchestrates steps 1 to 5 end to end for `reproduce`/`reproduce --fast`/`reproduce --with-test`
+   (`--with-scene` adds the pitch scene to a full run and is rejected with `--fast`); the
    `scripts/` files call the same `pipeline.py` functions to regenerate the numbers embedded in `docs/*.md`.
 
 Outside the judged path (added 12 November 2026, all exploratory): `features/xy_proxy.py` (`xy_blind_side_proxy`,
@@ -258,12 +270,22 @@ Outside the judged path (added 12 November 2026, all exploratory): `features/xy_
 `analysis/dynamic_events.py` and `analysis/case_study.py` with `viz/case_study.py`. The README is organised by the four
 video pillars: what we did, why, how, implications. The case study figure says "the labels disagree", never "XY is wrong".
 
+Also outside the judged path (added 12 November 2026, descriptive, no outcome read): `analysis/insights.py`
+(`confident_blind`: `p_blind_side` above 0.8 under both bounds, `group_profile`, `required_events`) and `analysis/scene.py`
+with `viz/case_study.plot_scene_cone`. `match_scene_cone.png` is a third figure and must stay a link in the README:
+embedding it would break the two-figure limit. Re-execute `examples/walkthrough.ipynb` after changing a function it calls
+(`tests/test_notebook.py` only checks that outputs are stored). The sample size numbers in the README (about 700 possession
+losses for an odds ratio of 1.25 at 80% power) are a planning approximation from the standard error in docs/INCREMENTAL.md 1.9.
+
 When changing a geometry or feature function, check both call sites (a `scripts/` file and `cli.py`/`pipeline.py`)
 so the README figures and the `docs/` write-ups stay consistent.
 
 ## How to work
 
-- Follow `docs/PLAN.md` phase by phase. Do not start a phase before the previous gate is passed.
+- `docs/PLAN.md` holds the phases and their gates. All of them are done (Phase 5 closed on 12 November 2026).
+  Open: the video, its link in the README, the submission. New work is exploratory and stays outside the judged path.
+- Run commands from the repository root. Downloads and caches resolve against the working directory (`./data`, `../opendata`,
+  see `data/paths.py`), so a run from another folder downloads everything again into that folder. Override with `BLINDSIDE_DATA_DIR`.
 - When a data fact is unclear, inspect the data and write the finding to `docs/FEASIBILITY.md`. Do not guess.
 - When an assumption is needed, state it, mark it as an assumption, and add a sensitivity check.
 - Distinguish in all write-ups between implemented and validated, implemented but not validated, and proposed.

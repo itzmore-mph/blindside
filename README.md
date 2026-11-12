@@ -3,7 +3,7 @@
 **Who is pressed from the blind side? Broadcast body pose against the XY proxy, with honest uncertainty.**
 
 Entry for the SkillCorner X PySport Analytics Cup 2.0, theme Defensive Positioning.
-Video: _link added at submission_. The sections follow it.
+Video: _link added at submission_.
 
 ## What I did
 
@@ -26,13 +26,9 @@ Exploratory, no outcome used. Kappa measures agreement, not accuracy: without gr
 
 Pressing a ball carrier from outside their visual field is a coaching staple, but XY tracking has no body
 orientation. Analysts fall back on a proxy: the presser comes from behind the carrier's direction of travel.
-Body pose lets me check whom that proxy labels:
-
-- **Carrier below 2 m/s** (35% of engagements): proxy and pose label agree barely beyond chance.
-  Do not count blind-side presses from XY alone.
-- **Carrier above 4 m/s**: kappa 0.54 to 0.77 across head and torso. The XY proxy is a workable stand-in.
-- **Read `p_blind_side` under both bounds.** Between 0.1 and 0.9 the press is undecided: 56 engagements under
-  the lower bound, 342 under the upper (head).
+Body pose lets me check whom that proxy labels.
+[One press on the pitch](docs/figures/match_scene_cone.png) shows the labels parting:
+a carrier backs away at 1.5 m/s while facing the presser.
 
 ## How I solved it, with uncertainty bounds
 
@@ -40,12 +36,13 @@ Body pose lets me check whom that proxy labels:
    ground plane. Every joint ships with a predicted error (`p90_mae_cm`). I treat it as an isotropic Gaussian
    (sigma = p90 / 2.5, an assumption, varied from 2.0 to 3.0) and propagate it by Monte Carlo into a circular
    standard deviation.
-2. **A bracket, not a number.** Independent joint errors overstate the angular noise if joint errors are correlated.
-   The Monte Carlo SD is therefore the upper bound and the frame-to-frame jitter of the angle the lower bound: torso 1.4 to 5.1 degrees, hips 2.0 to 12.0, head 2.0 to 13.2. The true error lies between them.
+2. **A bracket, not a number.** Independent joint errors overstate the angular noise if they are correlated.
+   The Monte Carlo SD is therefore the upper bound and the frame-to-frame jitter the lower: torso 1.4 to 5.1
+   degrees, hips 2.0 to 12.0, head 2.0 to 13.2. The true error lies between.
 3. **Reliability map.** Above 6 m/s the hip facing lies within 90 degrees of the direction of travel in 99.7% of
    poses. The published joint error is flat across the pitch, the jitter grows by up to 55% towards the far touchline.
 4. **`p_blind_side`.** The share of facing samples for which the presser lies outside a visual field of 100 degrees
-   to each side, computed under both bounds.
+   to each side, under both bounds.
 
 ![Reliability of pose-derived orientation](docs/figures/reliability_composite.png)
 
@@ -53,29 +50,28 @@ Prior art: SkillCorner's reference helper (MIT) gates shoulder orientation with 
 This package propagates the error instead.
 
 **The pre-registered test: what 217 events can resolve.** Before any outcome was joined to pose,
-[docs/PREREGISTRATION.md](docs/PREREGISTRATION.md) fixed the outcome (possession loss of the pressed possession),
-an XY baseline fitted on the 18 matches without pose, four pose features, the model and the resampling,
-clustered by possession.
+[docs/PREREGISTRATION.md](docs/PREREGISTRATION.md) fixed the outcome (loss of the pressed possession),
+an XY baseline from the 18 matches without pose, four pose features, the model and the resampling by possession.
 
-- Resolution: with 217 possession losses, the unpenalised coefficient of `p_blind_side` has an odds ratio
-  interval of 0.84 to 1.47 per standard deviation: an effect up to about 1.5 could not have been told from zero.
 - Result: adding the pose features changes the out-of-sample log loss by minus 0.0002 (95% intervals within minus
   0.0004 to 0.0000) under both bounds, and none of ten robustness checks changes that. The blind-side metric is
   implemented and geometrically verified, not validated as an explanatory variable.
+- Resolution: with 217 possession losses, the unpenalised coefficient of `p_blind_side` has an odds ratio
+  interval of 0.84 to 1.47 per standard deviation (standard error 0.14). A moderate effect is neither shown
+  nor excluded.
+- Rerun: for an odds ratio of 1.25 (assumed for planning, not found), about 700 possession losses,
+  seven matches, give 80% power ([calculation](docs/TACTICAL_INSIGHTS.md)). The frozen design reruns unchanged
+  once SkillCorner publishes more pose matches.
 
 ## Implications and open-source reuse
 
-- **Rerun on more data.** The design is frozen (pre-registration, baseline, features, one command) and reruns
-  unchanged when more matches with body pose are published.
-- **Matches without pose.** `classify_xy_reliability(carrier_speed)` marks an XY blind-side label as `unreliable`
-  below 2 m/s and `reliable` from 4 m/s.
-- **A package.** It installs on its own (`pip install .`):
+Installs on its own (`pip install .`):
 
 ```python
 import numpy as np
 from blindside import blind_side_probability, bound_correlation, sample_facing_angles
 
-# Carrier facing +x, ears 18 cm apart, 6 cm p90 error, presser behind the left shoulder.
+# Carrier facing +x, presser behind the left shoulder.
 ears = dict(left_xy=[[0.0, 0.09]], right_xy=[[0.0, -0.09]], left_p90_cm=[6.0], right_p90_cm=[6.0])
 for bound in ("lower", "upper"):
     rho = bound_correlation("head", bound)
@@ -84,25 +80,37 @@ for bound in ("lower", "upper"):
     print(f"p_blind_side, {bound} bound: {p[0]:.2f}")  # 1.00 and 0.73
 ```
 
-[examples/quickstart.py](examples/quickstart.py) runs the package on a pose file: angles with both bounds,
-then `p_blind_side`.
+### Tactical and scouting takeaways
 
-## Reproduce
+Descriptive, no outcome used ([details](docs/TACTICAL_INSIGHTS.md)). "Confidently blind": head `p_blind_side`
+above 0.8 under both bounds, 296 of 1,875 engagements.
 
-Requires [uv](https://docs.astral.sh/uv/). The repository holds no data: it is downloaded from
-SkillCorner's open data ([GitHub](https://github.com/SkillCorner/opendata),
-[Hugging Face](https://huggingface.co/datasets/SkillCorner/opendata-bodypose)) at pinned revisions and verified by sha256.
+- **When to trust XY.** Carrier below 2 m/s (35% of engagements): do not count blind-side presses from XY alone.
+  From 4 m/s the proxy is a workable stand-in (kappa 0.54 to 0.77).
+  `classify_xy_reliability(carrier_speed)` encodes this for matches without pose.
+- **Where.** Confidently blind: 19.2% of presses in the middle third, 10.9% in the opponent's build-up third.
+  The XY proxy sees no difference (50.6%, 48.2%).
+- **Who.** Central midfielders lead both lists: E. Alagich presses this way most (20 of 83),
+  J. O'Shea is pressed this way most (29 of 100).
+
+## Reproduce and quick look
+
+Without installing: [examples/walkthrough.ipynb](examples/walkthrough.ipynb) is stored with its outputs.
+Script: [examples/quickstart.py](examples/quickstart.py).
+
+Requires [uv](https://docs.astral.sh/uv/). Data comes from SkillCorner's open data
+([GitHub](https://github.com/SkillCorner/opendata),
+[Hugging Face](https://huggingface.co/datasets/SkillCorner/opendata-bodypose)), pinned and verified by sha256.
 
 ```
 uv sync
-uv run blindside reproduce --fast        # sample phase, about 1 minute, 100 MB
-uv run blindside reproduce               # both figures, about 13 minutes, 1.4 GB
-uv run blindside reproduce --with-test   # plus the pre-registered test, 3 GB
+uv run blindside reproduce --fast        # sample phase, 1 minute, 100 MB
+uv run blindside reproduce               # both figures, 13 minutes, 1.4 GB
+uv run blindside reproduce --with-test   # plus pre-registered test, 3 GB
 uv run pytest
 ```
 
-`--fast` runs on a 12.3 s sample with two engagements and writes stamped stand-ins to `outputs/fast/`.
-The full run writes both figures to `docs/figures/`.
+`--fast` writes stamped stand-ins to `outputs/fast/`, `--with-scene` adds the pitch scene.
 
 ## Limitations
 

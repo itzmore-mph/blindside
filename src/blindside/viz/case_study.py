@@ -1,9 +1,10 @@
-"""Two single engagements on the pitch, for the video walkthrough and ``docs/``.
+"""Single engagements on the pitch, for the video walkthrough and ``docs/``.
 
 :func:`plot_tactical_case_study` draws what each blind-side label sees of an engagement:
 the visual field of the carrier's head with the bracket of its angular error at the edges,
 the field that the XY proxy assumes around the direction of travel, and the presser.
-The type is sized for a screen share, not for the README.
+:func:`plot_scene_cone` draws one engagement with the runs that led to it and a box of
+its exact values. The type is sized for a screen share, not for the README.
 
 A panel shows one engagement. It can show that the two labels disagree. It cannot show
 which one is right: there is no ground truth for orientation.
@@ -11,7 +12,7 @@ which one is right: there is no ground truth for orientation.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 import matplotlib as mpl
 import numpy as np
@@ -19,7 +20,7 @@ import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch, Wedge
+from matplotlib.patches import FancyBboxPatch, Patch, Wedge
 from mplsoccer import Pitch
 
 from blindside.viz.style import GRID, INK, INK_SECONDARY, SEGMENT_COLORS, SURFACE, style_context
@@ -104,13 +105,14 @@ def _draw_players(axis: Axes, row: pd.Series, others: pd.DataFrame | None) -> No
         )  # fmt: skip
 
 
-def _draw_panel(
+def _draw_pitch_window(
     axis: Axes,
     row: pd.Series,
     others: pd.DataFrame | None,
     pitch_dims: tuple[float, float],
     half_angle_deg: float,
 ) -> None:
+    """Pitch, both fields and the players of one engagement, zoomed on carrier and presser."""
     pitch = Pitch(
         pitch_type="skillcorner",
         pitch_length=pitch_dims[0],
@@ -139,6 +141,15 @@ def _draw_panel(
     axis.text(left + 2.5, bottom + 0.35, "5 m", ha="center", va="bottom", fontsize=_FONT["small"],
               color=INK_SECONDARY, zorder=7)  # fmt: skip
 
+
+def _draw_panel(
+    axis: Axes,
+    row: pd.Series,
+    others: pd.DataFrame | None,
+    pitch_dims: tuple[float, float],
+    half_angle_deg: float,
+) -> None:
+    _draw_pitch_window(axis, row, others, pitch_dims, half_angle_deg)
     proxy_blind = bool(row["approach_angle_heading_deg"] > half_angle_deg)
     pose_blind = bool(row["p_head_lower"] > 0.5)
     axis.set_title(str(row["title"]), fontsize=_FONT["title"], fontweight="bold", loc="left",
@@ -233,6 +244,151 @@ def plot_tactical_case_study(
         figure.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.022, 0.07), ncols=3,
                       fontsize=_FONT["small"], labelcolor=INK, handlelength=2.4,
                       columnspacing=1.8)  # fmt: skip
+        if caption:
+            figure.text(0.03, 0.012, caption, ha="left", va="bottom", fontsize=_FONT["small"],
+                        color=INK_SECONDARY)  # fmt: skip
+    return figure
+
+
+def _draw_run(axis: Axes, path: np.ndarray | None, end: np.ndarray, *, lw: float) -> None:
+    """The run of a player before the engagement start, ending at the drawn position."""
+    if path is None or len(path) < 2:
+        return
+    points = np.vstack([np.asarray(path, dtype=float), end])
+    axis.plot(points[:, 0], points[:, 1], color=INK, lw=lw, alpha=0.8, zorder=5,
+              solid_capstyle="round")  # fmt: skip
+    # One dot per half second of tracking, so that the length of the run reads as speed.
+    axis.scatter(points[:-1:5, 0], points[:-1:5, 1], s=26, color=INK, zorder=5)
+
+
+def _info_lines(row: pd.Series, half_angle_deg: float) -> list[tuple[str, str]]:
+    """Name and value of each entry of the box next to the pitch."""
+    proxy_blind = bool(row["approach_angle_heading_deg"] > half_angle_deg)
+    lines = [
+        ("Carrier speed", f"{row['carrier_speed']:.1f} m/s"),
+        (
+            "XY label",
+            f"{_verdict(proxy_blind)}, presser {row['approach_angle_heading_deg']:.0f} degrees\n"
+            "off the direction of travel",
+        ),
+        (
+            "p_blind_side, head",
+            f"{row['p_head_lower']:.2f} lower bound\n{row['p_head_upper']:.2f} upper bound",
+        ),
+    ]
+    if "p_torso_lower" in row and np.isfinite(row["p_torso_lower"]):
+        lines.append(
+            (
+                "p_blind_side, torso",
+                f"{row['p_torso_lower']:.2f} lower bound\n{row['p_torso_upper']:.2f} upper bound",
+            )
+        )
+    lines.append(
+        (
+            "Head angle SD",
+            f"{row['head_sd_lower_deg']:.1f} degrees lower bound\n"
+            f"{row['head_sd_upper_deg']:.1f} degrees upper bound",
+        )
+    )
+    if "presser_off_head_deg" in row and np.isfinite(row["presser_off_head_deg"]):
+        lines.append(("Presser", f"{row['presser_off_head_deg']:.0f} degrees off the head facing"))
+    return lines
+
+
+def plot_scene_cone(
+    engagement: pd.Series,
+    others: pd.DataFrame | None,
+    pitch_dims: tuple[float, float],
+    paths: Mapping[str, np.ndarray] | None = None,
+    *,
+    half_angle_deg: float = 100.0,
+    headline: str = "One press, two labels",
+    caption: str | None = None,
+) -> Figure:
+    """One engagement on the pitch with both blind-side labels, the runs and its values.
+
+    The pitch shows what :func:`plot_tactical_case_study` shows for one panel: the head
+    facing (solid arrow) with the visual field and, at its two edges, the lower (dark) and
+    the upper (light) bound of the angular error, the direction of travel (dashed arrow)
+    with the field the XY proxy assumes (dashed outline), carrier, presser and the other
+    players. On top of that it draws the run of presser and carrier before the engagement
+    start and, next to the pitch, a box with the exact values.
+
+    Parameters
+    ----------
+    engagement
+        One row of :func:`blindside.analysis.pipeline.engagement_geometry`. Optional
+        entries: ``presser_off_head_deg``, ``carrier_name``, ``presser_name``, ``source``.
+    others
+        The remaining players at the engagement start: ``x``, ``y`` and the boolean
+        ``pressing_team``. None draws no context.
+    pitch_dims
+        ``(pitch_length, pitch_width)`` in metres.
+    paths
+        ``{"presser": xy, "carrier": xy}`` with positions ``(n, 2)`` before the engagement
+        start, oldest first, one per tracking frame. Missing entries draw no run.
+    half_angle_deg
+        Half-angle of the visual field, also the threshold of the XY proxy.
+    headline, caption
+        Text above and below the drawing.
+    """
+    paths = paths or {}
+    head = SEGMENT_COLORS["head"]
+    row = engagement
+    proxy_blind = bool(row["approach_angle_heading_deg"] > half_angle_deg)
+    pose_blind = bool(row["p_head_lower"] > 0.5)
+    with style_context(), mpl.rc_context({"axes.grid": False}):
+        figure = Figure(figsize=(16.0, 9.0))
+        axis = figure.add_axes((0.03, 0.2, 0.6, 0.64))
+        _draw_pitch_window(axis, row, others, pitch_dims, half_angle_deg)
+        for player in ("carrier", "presser"):
+            end = np.array([float(row[f"{player}_x"]), float(row[f"{player}_y"])])
+            _draw_run(axis, paths.get(player), end, lw=3.0 if player == "presser" else 2.0)
+        figure.suptitle(headline, x=0.03, y=0.955, ha="left", fontsize=_FONT["suptitle"],
+                        fontweight="bold", color=INK)  # fmt: skip
+        figure.text(
+            0.03, 0.875,
+            f"XY proxy: {_verdict(proxy_blind)}.  Head pose: {_verdict(pose_blind)}.",
+            fontsize=_FONT["title"], fontweight="bold", color=INK, ha="left", va="center",
+        )  # fmt: skip
+
+        left, top, step = 0.665, 0.82, 0.104
+        figure.add_artist(
+            FancyBboxPatch((left - 0.012, 0.2), 0.325, 0.64, transform=figure.transFigure,
+                           boxstyle="round,pad=0.0,rounding_size=0.008", fc=SURFACE, ec=GRID,
+                           lw=1.4)
+        )  # fmt: skip
+        for index, (name, value) in enumerate(_info_lines(row, half_angle_deg)):
+            y = top - index * step
+            figure.text(left, y, name, fontsize=_FONT["small"], color=INK_SECONDARY, ha="left",
+                        va="top")  # fmt: skip
+            figure.text(left, y - 0.026, value, fontsize=_FONT["label"], color=INK, ha="left",
+                        va="top", fontweight="bold", linespacing=1.25)  # fmt: skip
+
+        handles = [
+            Line2D([], [], color=head, lw=3.2, marker=">", ms=10, label="Head facing (ear axis)"),
+            Patch(color=head, alpha=0.22,
+                  label=f"Visual field, {half_angle_deg:g} degrees to each side"),
+            Patch(color=head, alpha=0.75,
+                  label="Edge of the field: error bracket, lower (dark) to upper (light)"),
+            Line2D([], [], color=INK, lw=2.4, ls=(0, (4, 2)), marker=">", ms=9,
+                   label="Direction of travel and the field the XY proxy assumes"),
+            Line2D([], [], color=INK, lw=3.0, marker="o", ms=5,
+                   label="Run before the press (dot every 0.5 s)"),
+            Line2D([], [], color=PITCH_LINE, lw=0, marker="o", ms=11,
+                   label="Team in possession (ring: pressing team)"),
+        ]  # fmt: skip
+        figure.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.022, 0.065), ncols=3,
+                      fontsize=_FONT["small"], labelcolor=INK, handlelength=2.4,
+                      columnspacing=1.8)  # fmt: skip
+        footer = []
+        if "carrier_name" in row and "presser_name" in row:
+            footer.append(f"Carrier: {row['carrier_name']}. Presser: {row['presser_name']}.")
+        if "source" in row:
+            footer.append(str(row["source"]))
+        if footer:
+            figure.text(0.03, 0.18, "  ".join(footer), ha="left", va="top",
+                        fontsize=_FONT["small"], color=INK_SECONDARY)  # fmt: skip
         if caption:
             figure.text(0.03, 0.012, caption, ha="left", va="bottom", fontsize=_FONT["small"],
                         color=INK_SECONDARY)  # fmt: skip

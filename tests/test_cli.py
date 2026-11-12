@@ -34,16 +34,26 @@ def test_main_dispatches_to_the_default_directories(monkeypatch: pytest.MonkeyPa
     calls: list[tuple] = []
     monkeypatch.setattr(cli, "reproduce_fast", lambda out: calls.append(("fast", out)))
     monkeypatch.setattr(
-        cli, "reproduce_full", lambda out, with_test=False: calls.append(("full", out, with_test))
+        cli,
+        "reproduce_full",
+        lambda out, with_test=False, with_scene=False: calls.append(
+            ("full", out, with_test, with_scene)
+        ),
     )
     assert cli.main(["reproduce", "--fast"]) == 0
     assert cli.main(["reproduce"]) == 0
     assert cli.main(["reproduce", "--with-test", "--output-dir", "x"]) == 0
+    assert cli.main(["reproduce", "--with-scene"]) == 0
     assert calls == [
         ("fast", cli.FAST_OUTPUT),
-        ("full", cli.DEFAULT_OUTPUT, False),
-        ("full", Path("x"), True),
+        ("full", cli.DEFAULT_OUTPUT, False, False),
+        ("full", Path("x"), True, False),
+        ("full", cli.DEFAULT_OUTPUT, False, True),
     ]
+    # The scene needs full matches, and it is not one of the two README figures.
+    with pytest.raises(SystemExit):
+        cli.main(["reproduce", "--fast", "--with-scene"])
+    assert cli.SCENE_FIGURE not in {cli.FIGURE_1, cli.FIGURE_2}
     # The fast path must never write into the directory of the README figures.
     assert cli.FAST_OUTPUT != cli.DEFAULT_OUTPUT
     assert {cli.FAST_FIGURE_1, cli.FAST_FIGURE_2}.isdisjoint({cli.FIGURE_1, cli.FIGURE_2})
