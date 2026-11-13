@@ -3,7 +3,7 @@
 **Who is pressed from the blind side? Broadcast body pose against the XY proxy, with honest uncertainty.**
 
 Entry for the SkillCorner X PySport Analytics Cup 2.0, theme Defensive Positioning.
-Video: [Blind-Side Pressing from Broadcast Body Pose](https://youtu.be/b3yNSfcScvQ).
+Video: [Blind-Side Pressing from Broadcast Body Pose](https://youtu.be/e7vXIoHuxDo).
 
 ## What I did
 
