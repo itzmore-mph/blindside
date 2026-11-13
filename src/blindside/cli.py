@@ -173,7 +173,7 @@ def reproduce_full(output_dir: Path, with_test: bool = False, with_scene: bool =
         "the true angular error lies between the two bounds."
     )
     _save(
-        plot_reliability_composite(**inputs.composite(), camera_side=camera_side, caption=caption), # type: ignore
+        plot_reliability_composite(**inputs.composite(), camera_side=camera_side, caption=caption),  # type: ignore
         output_dir / FIGURE_1,
     )
     del table, inputs
@@ -253,7 +253,7 @@ def reproduce_fast(output_dir: Path) -> None:
     inputs = reliability_inputs(table, pitch_dims, min_zone_poses=FAST_MIN_ZONE_POSES)
     caption = f"{FAST_STAMP} {len(table):,} poses. The README figure uses both full matches."
     _save(
-        plot_reliability_composite(**inputs.composite(), camera_side=camera_side, caption=caption), # type: ignore
+        plot_reliability_composite(**inputs.composite(), camera_side=camera_side, caption=caption),  # type: ignore
         output_dir / FAST_FIGURE_1,
     )
 
